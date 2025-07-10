@@ -1,5 +1,5 @@
 title = "Open Component Model"
-baseurl = "https://ocm.software"
+baseurl = "https://morri-son.github.io/ocm-website-test"
 canonifyURLs = false
 disableAliases = true
 disableHugoGeneratorInject = true
