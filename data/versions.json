@@ -1,4 +1,4 @@
 {
   "defaultVersion": "latest",
-  "versions": [ "latest" ]
+  "versions": [ "latest","dev" ]
 }
