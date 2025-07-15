@@ -1,4 +1,4 @@
-module github.com/open-component-model/ocm-website-test
+module github.com/morri-son/ocm-website-test
 
 go 1.24.2
 
