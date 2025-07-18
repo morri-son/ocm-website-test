@@ -59,7 +59,7 @@ mainSections = ["docs"]
   # be available in the version switcher of all versions.
 
   docsVersioning = true 
-  docsVersion = "latest"
+  docsVersion = "v1.0.0""
   defaultVersion = "latest"
 
   # UX
