@@ -21,7 +21,7 @@
     "lint": "npm run lint:scripts && npm run lint:styles && npm run lint:markdown",
     "mod:clean": "npm run hugo -- mod clean",
     "mod:tidy": "npm run hugo -- mod tidy",
-    "mod:update": "npm run hugo -- mod update",
+    "mod:get": "npm run hugo -- mod get",
     "postinfo": "exec-bin node_modules/.bin/hugo/hugo version",
     "postinstall": "hugo-installer --version otherDependencies.hugo --extended --destination node_modules/.bin/hugo",
     "preinfo": "npm version",
