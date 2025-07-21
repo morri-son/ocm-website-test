@@ -13,6 +13,7 @@
     "create": "exec-bin node_modules/.bin/hugo/hugo new",
     "dev:drafts": "exec-bin node_modules/.bin/hugo/hugo server --bind=0.0.0.0 --disableFastRender --baseURL=http://localhost --noHTTPCache --buildDrafts",
     "dev": "exec-bin node_modules/.bin/hugo/hugo server --bind=0.0.0.0 --disableFastRender --baseURL=http://localhost --noHTTPCache",
+    "hugo": "exec-bin node_modules/.bin/hugo/hugo",
     "info": "npm list",
     "lint:markdown": "markdownlint-cli2 \"*.md\" \"content/**/*.md\"",
     "lint:scripts": "eslint --cache assets/js",
