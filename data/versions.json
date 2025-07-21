@@ -1,4 +1,4 @@
 {
-  "defaultVersion": "latest",
-  "versions": [ "latest","dev" ]
+  "defaultVersion": "legacy",
+  "versions": [ "dev","legacy" ]
 }
