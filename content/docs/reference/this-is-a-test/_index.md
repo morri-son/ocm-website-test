@@ -1,8 +1,8 @@
 ---
 title: This is a test
-description: "Reference documentation for OCM tooling."
+description: "This page is a test reference for OCM documentation."
 icon: "📚"
-weight: 
+weight: 1
 toc: true
 sidebar:
   collapsed: true
