@@ -37,14 +37,28 @@ echo "DEBUG: Ran git fetch."
 
 echo "🔍 Determining versions to build (max: $MAX_VERSIONS)..."
 
+# Parse docsVersion and defaultVersion from params.toml
+docsVersion=$(grep '^\s*docsVersion' config/_default/params.toml | head -n1 | cut -d'=' -f2 | tr -d ' "')
+defaultVersion=$(grep '^\s*defaultVersion' config/_default/params.toml | head -n1 | cut -d'=' -f2 | tr -d ' "')
+echo "DEBUG: docsVersion from params.toml: $docsVersion"
+echo "DEBUG: defaultVersion from params.toml: $defaultVersion"
+
+# Map docsVersion 'dev' to 'main' branch
+if [ "$docsVersion" = "dev" ]; then
+  docsBranch="main"
+else
+  docsBranch="$docsVersion"
+fi
+echo "DEBUG: docsBranch used for docsVersion: $docsBranch"
+
 # Priority branches: always include
 declare -A priority_refs
 echo "DEBUG: Declared priority_refs as associative array."
-if git show-ref --verify --quiet refs/remotes/origin/main; then
-  echo "DEBUG: Found origin/main"
-  priority_refs["main"]=""
+if git show-ref --verify --quiet refs/remotes/origin/$docsBranch; then
+  echo "DEBUG: Found origin/$docsBranch (docsVersion)"
+  priority_refs["$docsBranch"]=""
 else
-  echo "DEBUG: origin/main not found"
+  echo "DEBUG: origin/$docsBranch (docsVersion) not found"
 fi
 if git show-ref --verify --quiet refs/remotes/origin/legacy; then
   echo "DEBUG: Found origin/legacy"
@@ -58,6 +72,7 @@ echo "DEBUG: Collecting release branches..."
 release_branches=($(git branch -r | grep -E "origin/v[0-9]+(\.[0-9]+)+$" | sed 's|origin/||' | sort -V -r))
 echo "DEBUG: release_branches: '${release_branches[@]}'"
 
+
 # Combine final selection robustly
 declare -A selected_versions
 echo "DEBUG: Declared selected_versions as associative array."
@@ -67,9 +82,14 @@ echo "DEBUG: priority_refs values: '${priority_refs[@]}'"
 for ref in "${!priority_refs[@]}"; do
   echo "DEBUG: Looping priority_refs, ref='$ref'"
   if [ -n "$ref" ]; then
-    echo "DEBUG: Adding priority branch '$ref' with value '${priority_refs[$ref]}' to selected_versions"
-    selected_versions["$ref"]="${priority_refs[$ref]}"
-    echo "DEBUG: selected_versions['$ref']='${selected_versions[$ref]}' (after priority add)"
+    # The branch that matches defaultVersion is built into root (public/), others into subfolders
+    if [ "$ref" = "$defaultVersion" ]; then
+      selected_versions["$ref"]=""
+      echo "DEBUG: selected_versions['$ref']='' (root, matches defaultVersion)"
+    else
+      selected_versions["$ref"]="$ref"
+      echo "DEBUG: selected_versions['$ref']='$ref' (subfolder)"
+    fi
   else
     echo "DEBUG: Skipping empty ref in priority_refs"
   fi
@@ -121,9 +141,6 @@ echo ""
 set -x  # Debug: Zeige alle ausgeführten Befehle
 declare -a worktree_dirs
 
-# Zielversion aus params.toml extrahieren (docsVersion)
-DOCS_VERSION=$(grep '^docsVersion' config/_default/params.toml | sed -E "s/.*= *\"([^\"]+)\".*/\\1/")
-echo "DEBUG: docsVersion from params.toml: $DOCS_VERSION"
 
 # PR-Branch-Name ermitteln (Netlify/GitHub-Umgebung)
 PR_BRANCH=""
@@ -146,7 +163,7 @@ for ref in "${!selected_versions[@]}"; do
   worktree_dir="worktree-$ref"
 
   # Für die Zielversion (docsVersion) den PR-Branch als Worktree verwenden
-  if [ "$ref" = "$DOCS_VERSION" ] && [ -n "$PR_BRANCH" ]; then
+  if [ "$ref" = "$docsBranch" ] && [ -n "$PR_BRANCH" ]; then
     echo "🔄 Setting up worktree for PR branch ($PR_BRANCH) as $ref -> ${version:-(root)}"
     git worktree add -f "$worktree_dir" "$PR_BRANCH" || { echo "❌ Error during worktree checkout for PR branch $PR_BRANCH" >&2; exit 1; }
   else
