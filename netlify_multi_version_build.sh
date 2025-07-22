@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
   set -eo pipefail  # Exit on error or pipe failure (debug: allow unset variables)
   echo "DEBUG: Bash version: $BASH_VERSION"
   echo "DEBUG: Script started as: $0"
