@@ -8,13 +8,13 @@
 
 
 [context.production]
-  command = ".github/versioning/netlify_multi_version_build.sh"
+  command = "netlify_multi_version_build.sh"
 
 [context.deploy-preview]
-  command = ".github/versioning/netlify_multi_version_build.sh"
+  command = "netlify_multi_version_build.sh"
 
 [context.branch-deploy]
-  command = ".github/versioning/netlify_multi_version_build.sh"
+  command = "netlify_multi_version_build.sh"
 
 [context.next]
   command = "npm run build"
