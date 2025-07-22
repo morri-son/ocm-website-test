@@ -2,10 +2,31 @@
   publish = "public"
   functions = "functions"
 
+# Redirects für versionierte Pfade
+[[redirects]]
+  from = "/dev/*"
+  to = "/dev/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/legacy/*"
+  to = "/legacy/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/v*/*"
+  to = "/v:version/:splat"
+  status = 200
+
+# Fallback für die Hauptversion (ohne Versionspfad)
+[[redirects]]
+  from = "/*"
+  to = "/:splat"
+  status = 200
+
 [build.environment]
   NODE_VERSION = "23.11.0"
   NPM_VERSION = "10.9.2"
-
 
 [context.production]
   command = "./netlify_multi_version_build.sh"
@@ -14,7 +35,7 @@
   command = "./netlify_multi_version_build.sh"
 
 [context.branch-deploy]
-  command = "netlify_multi_version_build.sh"
+  command = "./netlify_multi_version_build.sh"
 
 [context.next]
   command = "npm run build"
