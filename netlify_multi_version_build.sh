@@ -24,7 +24,7 @@
     exit 1
   fi
   echo "DEBUG: Associative arrays supported."
-  cd /Users/D032990/github/github.com/morri-son/ocm-website-test
+  cd "$(git rev-parse --show-toplevel)"
   echo "DEBUG: Changed to repo dir: $(pwd)"
 
   # Create main public directory
