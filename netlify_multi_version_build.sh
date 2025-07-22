@@ -48,7 +48,7 @@
   fi
   if git show-ref --verify --quiet refs/remotes/origin/legacy; then
     echo "DEBUG: Found origin/legacy"
-    priority_refs["legacy"]="latest"
+    priority_refs["legacy"]="legacy"
   else
     echo "DEBUG: origin/legacy not found"
   fi
