@@ -6,14 +6,15 @@
   NODE_VERSION = "23.11.0"
   NPM_VERSION = "10.9.2"
 
+
 [context.production]
-  command = "npm run build"
+  command = ".github/versioning/netlify_multi_version_build.sh"
 
 [context.deploy-preview]
-  command = "npm run build -- -b $DEPLOY_PRIME_URL"
+  command = ".github/versioning/netlify_multi_version_build.sh"
 
 [context.branch-deploy]
-  command = "npm run build -- -b $DEPLOY_PRIME_URL"
+  command = ".github/versioning/netlify_multi_version_build.sh"
 
 [context.next]
   command = "npm run build"
@@ -24,7 +25,7 @@
 [[plugins]]
   package = "netlify-plugin-submit-sitemap"
 
-	[plugins.inputs]
+  [plugins.inputs]
     baseUrl = "https://doks.netlify.app/"
     sitemapPath = "/sitemap.xml"
     ignorePeriod = 0
