@@ -94,5 +94,11 @@
 [[imports]]
   path = "github.com/morri-son/open-component-model-test"
   [[imports.mounts]]
-    source = "docs/reference/cli"
+    source = "docs/reference/ocm-cli"
     target = "content/docs/reference/ocm-cli"
+
+[[imports]]
+  path = "github.com/morri-son/open-component-model-test"
+  [[imports.mounts]]
+    source = "data/version.json"
+    target = "version.json"
