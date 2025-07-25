@@ -1,4 +1,3 @@
-
 accessmethod
 accessmethoddescriptor
 accessmethods
@@ -205,6 +204,7 @@ lastsnapshotdigest
 latestsnapshotdigest
 lifecycle
 lifecycles
+linktitle
 linter
 linters
 lister
@@ -241,6 +241,7 @@ mvn
 mvnrepository
 namespace
 namespaces
+neonephos
 newcomponentaccess
 newcomponentversionaccess
 newrepository
