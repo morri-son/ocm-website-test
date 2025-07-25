@@ -91,14 +91,8 @@
 ## Use @main to always use the latest version of the repository.
 ## Use version tags to pin to a specific version.
 
-[[imports]]
-  path = "github.com/morri-son/open-component-model-test"
-  [[imports.mounts]]
-    source = "docs/reference/ocm-cli"
-    target = "content/docs/reference/ocm-cli"
-
-[[imports]]
-  path = "github.com/morri-son/open-component-model-test"
-  [[imports.mounts]]
-    source = "data/version.json"
-    target = "version.json"
+#[[imports]]
+#  path = "github.com/morri-son/open-component-model-test"
+#  [[imports.mounts]]
+#    source = "cli/docs/reference"
+#    target = "content/docs/reference/ocm-cli"
