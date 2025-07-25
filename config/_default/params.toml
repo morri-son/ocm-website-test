@@ -60,7 +60,7 @@ mainSections = ["docs"]
 
   docsVersioning = true 
   docsVersion = "dev"
-  defaultVersion = "legacy"
+  defaultVersion = "current"
 
   # UX
   headerBar = true # true (default) or false
