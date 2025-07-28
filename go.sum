@@ -1,2 +1,2 @@
-github.com/morri-son/open-component-model-test/cli v0.0.0-20250725175031-89e20cbc2178 h1:/Y0s6R7DKwwEIshYYpG4/AbpYYEl0y+Cj7eL4erF2b8=
-github.com/morri-son/open-component-model-test/cli v0.0.0-20250725175031-89e20cbc2178/go.mod h1:QnfdEUXmRBIT7oyoFEPrlfgJNiYCLdet7KCTsZnhd9E=
+ocm.software/open-component-model/cli v0.0.0-20250728081643-31f4b7d5d515 h1:pgpAiM3OqRVm0UdsDp2a6csLolK2y8ldxAdkM0Wjbzk=
+ocm.software/open-component-model/cli v0.0.0-20250728081643-31f4b7d5d515/go.mod h1:ooCYPTFIoloMJN7c+jJHAjrljHjkfUmX7rXGVFDPFWQ=

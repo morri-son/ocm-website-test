@@ -92,7 +92,7 @@
 ## Use version tags to pin to a specific version.
 
 [[imports]]
-  path = "github.com/morri-son/open-component-model-test/cli"
+  path = "ocm.software/open-component-model/cli"
   [[imports.mounts]]
     source = "docs/reference"
     target = "content/docs/reference/ocm-cli"
