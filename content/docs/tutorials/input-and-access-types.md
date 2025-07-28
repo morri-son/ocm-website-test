@@ -211,6 +211,7 @@ It is also possible to import a helm chart from a helm chart repository:
 
 Here the helm chart version `12.2.7` is copied from the path `mariadb` in helm chart repository `https://charts.bitnami.com/bitnami`. After transporting the corresponding component version to an OCI registry, the helm chart will be made available under `charts/mariadb` prefixed by the name of the component version. This auto-prefix can be disabled by using a leading slash `/charts/mariadb`. If the `repository` tag is omitted, the name of the helm chart from `Chart.yaml` will be used. There are additional optional fields `caCert` and `caCertFile` to specify a TLS certificate for the helm chart repository.
 
+
 #### ociImage
 
 Takes an image that is located in an OCI registry and adds it as a resource.
