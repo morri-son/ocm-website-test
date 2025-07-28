@@ -2,4 +2,4 @@ dirs:
   - ./content
 replacementPatterns:
   - pattern: "^/"
-    replacement: "{{BASEURL}}/"
+    replacement: "${BASEURL}/"
