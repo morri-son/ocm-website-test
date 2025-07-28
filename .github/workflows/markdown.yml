@@ -85,6 +85,15 @@ jobs:
             echo "❌ Timeout after 10 minutes"
             exit 1
           fi
+      - name: Generate linkspector config
+        run: |
+          cat > .github/config/linkspector.yaml << EOF
+          dirs:
+            - ./content
+          baseUrl: "$BASEURL"
+          EOF
+        env:
+          BASEURL: ${{ steps.wait_for_preview.outputs.preview_url }}
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
       - name: Run linkspector
         uses: umbrelladocs/action-linkspector@874d01cae9fd488e3077b08952093235bd626977 # v1
