@@ -1,8 +1,8 @@
 [build]
   publish = "public"
 
-[context.deploy-preview]
-  command = "./netlify_multi_version_build.sh"
+#[context.deploy-preview]
+#  command = "./netlify_multi_version_build.sh"
 
 # Redirects für versionierte Pfade
 [[redirects]]
