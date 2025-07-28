@@ -86,6 +86,15 @@ jobs:
             echo "❌ Timeout after 10 minutes"
             exit 1
           fi
+          
+      - name: Debug step outputs
+        run: |
+          echo "Direct step output: '${{ steps.wait_for_preview.outputs.preview_url }}'"
+          echo "All outputs from wait_for_preview:"
+          echo '${{ toJson(steps.wait_for_preview.outputs) }}'
+          echo "Step conclusion: ${{ steps.wait_for_preview.conclusion }}"
+          echo "Step outcome: ${{ steps.wait_for_preview.outcome }}"
+
       - name: Debug and Generate linkspector config
         run: |
           echo "BASEURL value: '$BASEURL'"
@@ -130,4 +139,3 @@ jobs:
         with:
           config_path: .github/config/spellcheck.yml
           task_name: Markdown
-
