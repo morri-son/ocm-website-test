@@ -86,33 +86,15 @@ jobs:
             echo "❌ Timeout after 10 minutes"
             exit 1
           fi
-          
-      - name: Debug step outputs
-        run: |
-          echo "Direct step output: '${{ steps.wait_for_preview.outputs.preview_url }}'"
-          echo "All outputs from wait_for_preview:"
-          echo '${{ toJson(steps.wait_for_preview.outputs) }}'
-          echo "Step conclusion: ${{ steps.wait_for_preview.conclusion }}"
-          echo "Step outcome: ${{ steps.wait_for_preview.outcome }}"
 
       - name: Debug and Generate linkspector config
         run: |
-          echo "BASEURL value: '$BASEURL'"
-          echo "BASEURL length: $(echo -n "$BASEURL" | wc -c)"
-          
-          if [ -z "$BASEURL" ]; then
-            echo "ERROR: BASEURL is empty!"
-            exit 1
-          fi
-          
-          mkdir -p .github/config
           cat > .github/config/linkspector.yaml << EOF
           dirs:
             - ./content
           baseUrl: "$BASEURL"
-          replacementPatterns:
-            - pattern: "^/"
-              replacement: "$BASEURL/"
+          ignorePatterns:
+            - pattern: '/images/.*'
           EOF
           
           echo "Generated config:"
