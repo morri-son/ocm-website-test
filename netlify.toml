@@ -5,7 +5,7 @@
 #  command = "./netlify_multi_version_build.sh"
 
 [context.deploy-preview]
-  command = "hugo --gc --minify --buildFuture -b $DEPLOY_PRIME_URL"
+  command = "npm run build -- -b $DEPLOY_PRIME_URL"
 
 # Redirects für versionierte Pfade
 [[redirects]]
@@ -27,4 +27,3 @@
   from = "/*"
   to = "/:splat"
   status = 200
-  
