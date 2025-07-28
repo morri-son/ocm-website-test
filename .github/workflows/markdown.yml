@@ -86,13 +86,28 @@ jobs:
             echo "❌ Timeout after 10 minutes"
             exit 1
           fi
-      - name: Generate linkspector config
+      - name: Debug and Generate linkspector config
         run: |
+          echo "BASEURL value: '$BASEURL'"
+          echo "BASEURL length: $(echo -n "$BASEURL" | wc -c)"
+          
+          if [ -z "$BASEURL" ]; then
+            echo "ERROR: BASEURL is empty!"
+            exit 1
+          fi
+          
+          mkdir -p .github/config
           cat > .github/config/linkspector.yaml << EOF
           dirs:
             - ./content
           baseUrl: "$BASEURL"
+          replacementPatterns:
+            - pattern: "^/"
+              replacement: "$BASEURL/"
           EOF
+          
+          echo "Generated config:"
+          cat .github/config/linkspector.yaml
         env:
           BASEURL: ${{ steps.wait_for_preview.outputs.preview_url }}
       - name: Run linkspector
