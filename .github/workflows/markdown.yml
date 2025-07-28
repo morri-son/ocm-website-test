@@ -93,6 +93,8 @@ jobs:
           dirs:
             - ./content
           baseUrl: "$BASEURL"
+          ignorePatterns:
+            - pattern: '/images/.*'
           EOF
           
           echo "Generated config:"
