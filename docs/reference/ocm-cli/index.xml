@@ -3,7 +3,123 @@
 &lt;h3 id="synopsis">Synopsis&lt;/h3>
 &lt;p>The Open Component Model command line client supports the work with OCM
 artifacts, like Component Archives, Common Transport Archive,
-Component Repositories, and Component Versions.&lt;/p></description></item><item><title>ocm add</title><link>https://morri-son.github.io/ocm-website-test/docs/reference/ocm-cli/ocm-add/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://morri-son.github.io/ocm-website-test/docs/reference/ocm-cli/ocm-add/</guid><description>&lt;h2 id="ocm-add">ocm add&lt;/h2>
+Component Repositories, and Component Versions.&lt;/p></description></item><item><title>ocm aaa</title><link>https://morri-son.github.io/ocm-website-test/docs/reference/ocm-cli/ocm-aaa/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://morri-son.github.io/ocm-website-test/docs/reference/ocm-cli/ocm-aaa/</guid><description>&lt;h2 id="ocm-add">ocm add&lt;/h2>
+&lt;p>Add anything to OCM&lt;/p>
+
+
+
+&lt;div class="expressive-code">
+ &lt;figure class="frame not-content">
+ &lt;figcaption class="header">
+ &lt;span class="title">&lt;/span>
+ &lt;/figcaption>
+ &lt;pre tabindex="0">&lt;code>ocm add {component-version|component-versions|cv|cvs} [flags]&lt;/code>&lt;/pre>
+ &lt;/figure>
+&lt;/div>
+&lt;h3 id="options">Options&lt;/h3>
+
+
+
+&lt;div class="expressive-code">
+ &lt;figure class="frame not-content">
+ &lt;figcaption class="header">
+ &lt;span class="title">&lt;/span>
+ &lt;/figcaption>
+ &lt;pre tabindex="0">&lt;code> -h, --help help for add&lt;/code>&lt;/pre>
+ &lt;/figure>
+&lt;/div>
+&lt;h3 id="options-inherited-from-parent-commands">Options inherited from parent commands&lt;/h3>
+
+
+
+&lt;div class="expressive-code">
+ &lt;figure class="frame not-content">
+ &lt;figcaption class="header">
+ &lt;span class="title">&lt;/span>
+ &lt;/figcaption>
+ &lt;pre tabindex="0">&lt;code> --config string supply configuration by a given configuration file.
+ By default (without specifying custom locations with this flag), the file will be read from one of the well known locations:
+ 1. The path specified in the OCM_CONFIG_PATH environment variable
+ 2. The XDG_CONFIG_HOME directory (if set), or the default XDG home ($HOME/.config), or the user&amp;#39;s home directory
+ - $XDG_CONFIG_HOME/ocm/config
+ - $XDG_CONFIG_HOME/.ocmconfig
+ - $HOME/.config/ocm/config
+ - $HOME/.config/.ocmconfig
+ - $HOME/.ocm/config
+ - $HOME/.ocmconfig
+ 3. The current working directory:
+ - $PWD/ocm/config
+ - $PWD/.ocmconfig
+ 4. The directory of the current executable:
+ - $EXE_DIR/ocm/config
+ - $EXE_DIR/.ocmconfig
+ Using the option, this configuration file be used instead of the lookup above.
+ --logformat enum set the log output format that is used to print individual logs
+ json: Output logs in JSON format, suitable for machine processing
+ text: Output logs in human-readable text format, suitable for console output
+ (must be one of [json text]) (default text)
+ --loglevel enum sets the logging level
+ debug: Show all logs including detailed debugging information
+ info: Show informational messages and above
+ warn: Show warnings and errors only (default)
+ error: Show errors only
+ (must be one of [debug error info warn]) (default info)
+ --logoutput enum set the log output destination
+ stdout: Write logs to standard output (default)
+ stderr: Write logs to standard error, useful for separating logs from normal output
+ (must be one of [stderr stdout]) (default stdout)
+ --temp-folder string Specify a custom temporary folder path for filesystem operations.&lt;/code>&lt;/pre>
+ &lt;/figure>
+&lt;/div>
+&lt;h3 id="see-also">SEE ALSO&lt;/h3>
+&lt;ul>
+&lt;li>
+
+
+
+
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+
+&lt;a href="ocm">ocm&lt;/a>	 - The official Open Component Model (OCM) CLI&lt;/li>
+&lt;li>
+
+
+
+
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+
+&lt;a href="https://morri-son.github.io/ocm-website-test/docs/reference/ocm-cli/ocm-add-component-version">ocm add component-version&lt;/a>	 - Add component version(s) to an OCM Repository stored as Common Transport Format Archive (CTF) based on a &amp;ldquo;component-constructor&amp;rdquo; file&lt;/li>
+&lt;/ul></description></item><item><title>ocm add</title><link>https://morri-son.github.io/ocm-website-test/docs/reference/ocm-cli/ocm-add/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://morri-son.github.io/ocm-website-test/docs/reference/ocm-cli/ocm-add/</guid><description>&lt;h2 id="ocm-add">ocm add&lt;/h2>
 &lt;p>Add anything to OCM&lt;/p>
 
 
@@ -258,7 +374,4 @@ to enable it. You can execute the following once:&lt;/p></description></item><it
 
 
 &lt;a href="https://morri-son.github.io/ocm-website-test/docs/reference/ocm-cli/ocm-download-resource">ocm download resource&lt;/a>	 - Download resources described in a component version in an OCM Repository&lt;/li>
-&lt;/ul></description></item><item><title>ocm download resource</title><link>https://morri-son.github.io/ocm-website-test/docs/reference/ocm-cli/ocm-download-resource/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://morri-son.github.io/ocm-website-test/docs/reference/ocm-cli/ocm-download-resource/</guid><description>&lt;h2 id="ocm-download-resource">ocm download resource&lt;/h2>
-&lt;p>Download resources described in a component version in an OCM Repository&lt;/p>
-&lt;h3 id="synopsis">Synopsis&lt;/h3>
-&lt;p>Download a resource from a component version located in an Open Component Model (OCM) repository.&lt;/p></description></item></channel></rss>
+&lt;/ul></description></item></channel></rss>
