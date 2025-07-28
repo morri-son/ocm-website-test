@@ -27,3 +27,4 @@
   from = "/*"
   to = "/:splat"
   status = 200
+  
