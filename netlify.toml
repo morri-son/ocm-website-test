@@ -4,6 +4,9 @@
 #[context.deploy-preview]
 #  command = "./netlify_multi_version_build.sh"
 
+[context.deploy-preview]
+  command = "npm run build -- -b $DEPLOY_PRIME_URL"
+
 # Redirects für versionierte Pfade
 [[redirects]]
   from = "/dev/*"
