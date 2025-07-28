@@ -332,4 +332,3 @@ Refers to an object in an AWS S3 store.
       bucket: gardenlinux
       key: meta/singles/gcp-cloud-gardener-_prod-890.0-53b732
 ```
-
