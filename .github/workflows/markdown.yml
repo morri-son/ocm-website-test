@@ -34,179 +34,88 @@ jobs:
         with:
           config_path: .github/config/spellcheck.yml
           task_name: Markdown
-
   verify-links:
     name: Verify links
     runs-on: ubuntu-latest
     steps:
-      
-
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
       - name: Wait for Netlify Deploy Preview
         id: wait_for_preview
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -euo pipefail
-          
-          echo "Waiting up to 8 minutes for Netlify deploy preview..."
+          set -eo pipefail
+          echo "Waiting up to 10 minutes for Netlify deploy preview..."
           export REPO="${{ github.repository }}"
-          export SHA="${{ github.event.pull_request.head.sha || github.sha }}"
+          export SHA="${{ github.event.pull_request.head.sha }}"
 
-          timeout 480 bash -c '
-            set -euo pipefail
-            
-            # Function to get Netlify suite info with proper error handling
-            get_netlify_suite() {
-              local output
-              
-              if ! output=$(gh api repos/"$REPO"/commits/"$SHA"/check-suites 2>&1); then
-                echo "API_ERROR: Failed to fetch check-suites: $output" >&2
-                return 1
-              fi
-              
-              local suite_info
-              if ! suite_info=$(echo "$output" | jq -r ".check_suites[] | select(.app.slug == \"netlify\") | {id, status, conclusion}" 2>/dev/null); then
-                echo "null"
-                return 0
-              fi
-              
-              if [ -z "$suite_info" ] || [ "$suite_info" = "null" ]; then
-                echo "null"
-              else
-                echo "$suite_info"
-              fi
+          timeout 600 bash -c '
+            set -eo pipefail
+            retry_gh_api() {
+              local cmd="$1"
+              local max_attempts=5
+              local attempt=1
+              local result=""
+              while [ $attempt -le $max_attempts ]; do
+                result=$(eval "$cmd" 2>/dev/null || true)
+                if [ -n "$result" ]; then
+                  echo "$result"
+                  return 0
+                fi
+                echo "gh api attempt $attempt failed, retrying..." >&2
+                sleep 2
+                attempt=$((attempt+1))
+              done
+              echo "gh api failed after $max_attempts attempts" >&2
+              return 1
             }
-            
-            # Function to get deploy preview URL with proper error handling
-            get_preview_url() {
-              local output
-              local preview_url
-              
-              if ! output=$(gh api repos/"$REPO"/commits/"$SHA"/status 2>&1); then
-                echo "API_ERROR: Failed to fetch status: $output" >&2
-                return 1
-              fi
-              
-              if ! preview_url=$(echo "$output" | jq -r ".statuses[] | select(.context==\"netlify/open-component-model/deploy-preview\") | .target_url" 2>/dev/null | head -1); then
-                return 1
-              fi
-              
-              if [ -n "$preview_url" ] && [ "$preview_url" != "null" ]; then
-                echo "$preview_url"
-              fi
-            }
-            
-            INITIAL_WAIT=true
-            API_ERROR_COUNT=0
-            MAX_API_ERRORS=5
-            
+
             while true; do
-              # Reset pipefail for this iteration
-              set +e
-              SUITE_INFO=$(get_netlify_suite 2>&1)
-              SUITE_EXIT_CODE=$?
-              set -e
-              
-              # Handle API errors with exponential backoff
-              if [ $SUITE_EXIT_CODE -ne 0 ] || [[ "$SUITE_INFO" == API_ERROR:* ]]; then
-                API_ERROR_COUNT=$((API_ERROR_COUNT + 1))
-                BACKOFF_TIME=$((API_ERROR_COUNT * 5))
-                
-                echo "⚠️  GitHub API error ($API_ERROR_COUNT/$MAX_API_ERRORS): ${SUITE_INFO#API_ERROR: }"
-                
-                if [ $API_ERROR_COUNT -ge $MAX_API_ERRORS ]; then
-                  echo "❌ Too many API errors, giving up"
+              # Get check suite for Netlify app
+              SUITE_JSON=$(retry_gh_api "gh api repos/\"$REPO\"/commits/\"$SHA\"/check-suites --jq '[ .check_suites[] | select(.app.slug == \"netlify\") ]'")
+
+              # no suite available? sleep and retry
+              if [ -z "$SUITE_JSON" ] || [ "$(echo "$SUITE_JSON" | jq length)" -eq 0 ]; then
+                sleep 5
+                continue
+              fi
+
+              # Read suite ID, status and conclusion
+              SUITE_ID=$(echo "$SUITE_JSON" | jq -r ".[0].id")
+              STATUS=$(echo    "$SUITE_JSON" | jq -r ".[0].status")
+              CONCLUSION=$(echo "$SUITE_JSON" | jq -r ".[0].conclusion")
+
+              echo "Netlify suite status: $STATUS, conclusion: $CONCLUSION"
+
+              if [ "$STATUS" = "completed" ]; then
+                if [[ "$CONCLUSION" = "success" || "$CONCLUSION" = "neutral" ]]; then
+                  # Get deploy preview URL from status
+                  STATUS_JSON=$(retry_gh_api "gh api repos/\"$REPO\"/commits/\"$SHA\"/status --jq '.statuses[] | select(.context==\"netlify/open-component-model/deploy-preview\")'")
+
+                  PREVIEW_URL=$(echo "$STATUS_JSON" | jq -r '.target_url')
+
+                  if [ -z "$PREVIEW_URL" ] || [ "$PREVIEW_URL" = "null" ]; then
+                    echo "❌ Could not get Netlify preview URL"
+                    exit 1
+                  fi
+
+                  echo "✅ Deploy Preview ready: $PREVIEW_URL"
+                  echo "preview_url=$PREVIEW_URL" >> $GITHUB_OUTPUT
+                  exit 0
+                else
+                  echo "❌ Deploy failed: $CONCLUSION"
                   exit 1
                 fi
-                
-                echo "🔄 Retrying in ${BACKOFF_TIME}s..."
-                sleep $BACKOFF_TIME
-                continue
-              fi
-              
-              # Reset error count on successful API call
-              API_ERROR_COUNT=0
-
-              if [ "$SUITE_INFO" = "null" ] || [ -z "$SUITE_INFO" ]; then
-                if [ "$INITIAL_WAIT" = "true" ]; then
-                  echo "⏳ Waiting for Netlify to start deployment..."
-                  INITIAL_WAIT=false
-                fi
-                sleep 3
-                continue
               fi
 
-              # Parse suite info safely
-              if ! STATUS=$(echo "$SUITE_INFO" | jq -r ".status" 2>/dev/null); then
-                echo "⚠️  Failed to parse suite status, retrying..."
-                sleep 3
-                continue
-              fi
-              
-              if ! CONCLUSION=$(echo "$SUITE_INFO" | jq -r ".conclusion" 2>/dev/null); then
-                echo "⚠️  Failed to parse suite conclusion, retrying..."
-                sleep 3
-                continue
-              fi
-              
-              case "$STATUS" in
-                "queued")
-                  echo "📋 Netlify deployment queued..."
-                  sleep 5
-                  ;;
-                "in_progress")
-                  echo "🔄 Netlify deployment in progress..."
-                  sleep 8
-                  ;;
-                "completed")
-                  case "$CONCLUSION" in
-                    "success"|"neutral")
-                      # Handle URL retrieval with error handling
-                      set +e
-                      PREVIEW_URL=$(get_preview_url 2>&1)
-                      URL_EXIT_CODE=$?
-                      set -e
-                      
-                      if [ $URL_EXIT_CODE -ne 0 ] || [[ "$PREVIEW_URL" == API_ERROR:* ]]; then
-                        echo "⚠️  Failed to get preview URL: ${PREVIEW_URL#API_ERROR: }, retrying..."
-                        sleep 3
-                        continue
-                      fi
-                      
-                      if [ -n "$PREVIEW_URL" ] && [ "$PREVIEW_URL" != "null" ]; then
-                        echo "✅ Deploy Preview ready: $PREVIEW_URL"
-                        echo "preview_url=$PREVIEW_URL" >> $GITHUB_OUTPUT
-                        exit 0
-                      else
-                        echo "⚠️  Deploy completed but no preview URL found, retrying..."
-                        sleep 3
-                      fi
-                      ;;
-                    "failure"|"cancelled")
-                      echo "❌ Netlify deployment failed: $CONCLUSION"
-                      exit 1
-                      ;;
-                    *)
-                      echo "⚠️  Unknown conclusion: $CONCLUSION, retrying..."
-                      sleep 5
-                      ;;
-                  esac
-                  ;;
-                *)
-                  echo "⚠️  Unknown status: $STATUS, retrying..."
-                  sleep 5
-                  ;;
-              esac
+              # still pending?
+              sleep 15
             done
           '
 
-          EXIT_CODE=$?
-          if [ $EXIT_CODE -eq 124 ]; then
-            echo "❌ Timeout after 8 minutes - Netlify deployment took too long"
-            exit 1
-          elif [ $EXIT_CODE -ne 0 ]; then
-            echo "❌ Failed to get Netlify deployment status"
+          # timeout returns 124 if command times out
+          if [ $? -eq 124 ]; then
+            echo "❌ Timeout after 10 minutes"
             exit 1
           fi
 
@@ -221,11 +130,11 @@ jobs:
           ignorePatterns:
             - pattern: '/images/.*'
           EOF
+          
           echo "Generated config:"
           cat .github/config/linkspector.yaml
         env:
           BASEURL: ${{ steps.wait_for_preview.outputs.preview_url }}
-
       - name: Run linkspector
         uses: umbrelladocs/action-linkspector@874d01cae9fd488e3077b08952093235bd626977 # v1
         with:
