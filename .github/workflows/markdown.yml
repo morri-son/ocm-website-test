@@ -53,12 +53,13 @@ jobs:
             set -e
             while true; do
               # Get check suite for Netlify app
-              SUITE_JSON=$(gh api repos/"$REPO"/commits/"$SHA"/check-suites --jq "[ .check_suites[] | select(.app.slug == \"netlify\") ]" 2>/dev/null)
+              SUITE_JSON_RAW=$(gh api repos/"$REPO"/commits/"$SHA"/check-suites 2>/dev/null)
               if [ $? -ne 0 ]; then
                 echo "❌ Fehler beim Aufruf von gh API (check-suites)"
                 sleep 5
                 continue
               fi
+              SUITE_JSON=$(echo "$SUITE_JSON_RAW" | jq '[ .check_suites[] | select(.app.slug == "netlify") ]')
 
               # no suite available? sleep and retry
               if [ "$(echo "$SUITE_JSON" | jq length)" -eq 0 ]; then
