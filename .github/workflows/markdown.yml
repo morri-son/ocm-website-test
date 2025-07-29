@@ -34,7 +34,6 @@ jobs:
         with:
           config_path: .github/config/spellcheck.yml
           task_name: Markdown
-
   verify-links:
     name: Verify links
     runs-on: ubuntu-latest
@@ -50,57 +49,44 @@ jobs:
           export SHA="${{ github.event.pull_request.head.sha }}"
 
           timeout 600 bash -c '
-            set -euo pipefail
-
-            retry_gh_api() {
-              local cmd="$1"
-              local max_attempts=5
-              local attempt=1
-              while [ $attempt -le $max_attempts ]; do
-                local result=""
-                result=$(eval "$cmd" 2>/dev/null || true)
-                if [ -n "$result" ]; then
-                  echo "$result"
-                  return 0
-                fi
-                echo "gh api attempt $attempt failed, retrying..." >&2
-                sleep 2
-                attempt=$((attempt+1))
-              done
-              echo "gh api failed after $max_attempts attempts" >&2
-              return 1
-            }
-
+            set -o pipefail
+            set -e
             while true; do
+              # Get check suite for Netlify app
               SUITE_JSON=""
-              if ! SUITE_JSON=$(retry_gh_api "gh api repos/\"$REPO\"/commits/\"$SHA\"/check-suites --jq '[ .check_suites[] | select(.app.slug == \"netlify\") ]'"); then
-                SUITE_JSON=""
-              fi
-
-              if [ -z "$SUITE_JSON" ] || [ "$(echo "$SUITE_JSON" | jq length || echo 0)" -eq 0 ]; then
+              if ! SUITE_JSON=$(gh api repos/"$REPO"/commits/"$SHA"/check-suites --jq "[ .check_suites[] | select(.app.slug == \"netlify\") ]" 2>/dev/null); then
+                echo "❌ Fehler beim Aufruf von gh API (check-suites)"
                 sleep 5
                 continue
               fi
 
-              SUITE_ID=$(echo "$SUITE_JSON" | jq -r ".[0].id" || echo "")
-              STATUS=$(echo "$SUITE_JSON" | jq -r ".[0].status" || echo "")
-              CONCLUSION=$(echo "$SUITE_JSON" | jq -r ".[0].conclusion" || echo "")
+              # no suite available? sleep and retry
+              if [ "$(echo "$SUITE_JSON" | jq length)" -eq 0 ]; then
+                sleep 5
+                continue
+              fi
+
+              # Read suite ID, status and conclusion
+              SUITE_ID=$(echo "$SUITE_JSON" | jq -r ".[0].id")
+              STATUS=$(echo    "$SUITE_JSON" | jq -r ".[0].status")
+              CONCLUSION=$(echo "$SUITE_JSON" | jq -r ".[0].conclusion")
 
               echo "Netlify suite status: $STATUS, conclusion: $CONCLUSION"
 
               if [ "$STATUS" = "completed" ]; then
                 if [[ "$CONCLUSION" = "success" || "$CONCLUSION" = "neutral" ]]; then
+                  # Get deploy preview URL from status
                   STATUS_JSON=""
-                  if ! STATUS_JSON=$(retry_gh_api "gh api repos/\"$REPO\"/commits/\"$SHA\"/status --jq '.statuses[] | select(.context==\"netlify/open-component-model/deploy-preview\")'"); then
-                    echo "❌ Could not fetch Netlify deploy status"
-                    exit 1
+                  if ! STATUS_JSON=$(gh api repos/"$REPO"/commits/"$SHA"/status --jq ".statuses[] | select(.context==\"netlify/open-component-model/deploy-preview\")" 2>/dev/null); then
+                    echo "❌ Fehler beim Aufruf von gh API (status)"
+                    exit 2
                   fi
 
-                  PREVIEW_URL=$(echo "$STATUS_JSON" | jq -r ".target_url" || echo "")
+                  PREVIEW_URL=$(echo "$STATUS_JSON" | jq -r '.target_url')
 
                   if [ -z "$PREVIEW_URL" ] || [ "$PREVIEW_URL" = "null" ]; then
-                    echo "❌ Could not get Netlify preview URL"
-                    exit 1
+                    echo "❌ Deploy Preview URL konnte nicht ermittelt werden."
+                    exit 3
                   fi
 
                   echo "✅ Deploy Preview ready: $PREVIEW_URL"
@@ -112,16 +98,20 @@ jobs:
                 fi
               fi
 
+              # still pending?
               sleep 15
             done
           '
 
+          #  timeout returns 124 if command times out
           if [ $? -eq 124 ]; then
             echo "❌ Timeout after 10 minutes"
             exit 1
           fi
 
       - name: Generate linkspector config
+        # The linkspector config needs to be generated dynamically as
+        # the action does not support passing the base URL as an environment variable.
         run: |
           cat > .github/config/linkspector.yaml << EOF
           dirs:
@@ -130,12 +120,11 @@ jobs:
           ignorePatterns:
             - pattern: '/images/.*'
           EOF
-
+          
           echo "Generated config:"
           cat .github/config/linkspector.yaml
         env:
           BASEURL: ${{ steps.wait_for_preview.outputs.preview_url }}
-
       - name: Run linkspector
         uses: umbrelladocs/action-linkspector@874d01cae9fd488e3077b08952093235bd626977 # v1
         with:
