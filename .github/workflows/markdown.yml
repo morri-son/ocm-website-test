@@ -44,16 +44,15 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set -o pipefail
           echo "Waiting up to 10 minutes for Netlify deploy preview..."
           export REPO="${{ github.repository }}"
           export SHA="${{ github.event.pull_request.head.sha }}"
 
           timeout 600 bash -c '
-            set -o pipefail
-            set -e
             while true; do
               # Get check suite for Netlify app
-              SUITE_JSON=$(gh api repos/"$REPO"/commits/"$SHA"/check-suites 2>/dev/null | jq "[ .check_suites[] | select(.app.slug == \"netlify\") ]")
+              SUITE_JSON=$(gh api repos/"$REPO"/commits/"$SHA"/check-suites --jq "[ .check_suites[] | select(.app.slug == \"netlify\") ]" 2>/dev/null)
               if [ $? -ne 0 ]; then
                 echo "❌ Fehler beim Aufruf von gh API (check-suites)"
                 sleep 5
@@ -76,13 +75,13 @@ jobs:
               if [ "$STATUS" = "completed" ]; then
                 if [[ "$CONCLUSION" = "success" || "$CONCLUSION" = "neutral" ]]; then
                   # Get deploy preview URL from status
-                  STATUS_JSON=$(gh api repos/"$REPO"/commits/"$SHA"/status 2>/dev/null)
+                  STATUS_JSON=$(gh api repos/"$REPO"/commits/"$SHA"/status --jq ".statuses[] | select(.context==\"netlify/open-component-model/deploy-preview\")" 2>/dev/null)
                   if [ $? -ne 0 ]; then
                     echo "❌ Fehler beim Aufruf von gh API (status)"
                     exit 2
                   fi
 
-                  PREVIEW_URL=$(echo "$STATUS_JSON" | jq -r ".statuses[] | select(.context==\"netlify/open-component-model/deploy-preview\") | .target_url")
+                  PREVIEW_URL=$(echo "$STATUS_JSON" | jq -r '.target_url')
 
                   if [ -z "$PREVIEW_URL" ] || [ "$PREVIEW_URL" = "null" ]; then
                     echo "❌ Deploy Preview URL konnte nicht ermittelt werden."
