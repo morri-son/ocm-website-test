@@ -52,25 +52,36 @@ jobs:
           timeout 600 bash -c '
             set -euo pipefail
 
-            retry_gh_api() {
-              local cmd="$1"
-              local max_attempts=5
-              local attempt=1
-              local result=""
-              while [ $attempt -le $max_attempts ]; do
-                if result=$(eval "$cmd" 2>/dev/null); then
-                  if [ -n "$result" ]; then
-                    echo "$result"
-                    return 0
-                  fi
-                fi
-                echo "gh api attempt $attempt failed, retrying..." >&2
-                sleep 2
-                attempt=$((attempt+1))
-              done
-              echo "gh api failed after $max_attempts attempts" >&2
-              return 1
-            }
+          retry_gh_api() {
+            local cmd="$1"
+            local max_attempts=5
+            local attempt=1
+            while [ $attempt -le $max_attempts ]; do
+              local result
+              result=$(eval "$cmd" 2>/dev/null || true)
+              if [ -n "$result" ]; then
+                echo "$result"
+                return 0
+              fi
+              echo "gh api attempt $attempt failed, retrying..." >&2
+              sleep 2
+              attempt=$((attempt+1))
+            done
+            echo "gh api failed after $max_attempts attempts" >&2
+            return 1
+          }
+
+              if [ -n "$result" ]; then
+                echo "$result"
+                return 0
+              fi
+              echo "gh api attempt $attempt failed, retrying..." >&2
+              sleep 2
+              attempt=$((attempt+1))
+            done
+            echo "gh api failed after $max_attempts attempts" >&2
+            return 1
+          }
 
             while true; do
               SUITE_JSON=$(retry_gh_api "gh api repos/\"$REPO\"/commits/\"$SHA\"/check-suites --jq '[ .check_suites[] | select(.app.slug == \"netlify\") ]'" || true)
