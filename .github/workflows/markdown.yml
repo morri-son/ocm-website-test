@@ -34,10 +34,13 @@ jobs:
         with:
           config_path: .github/config/spellcheck.yml
           task_name: Markdown
+
   verify-links:
     name: Verify links
     runs-on: ubuntu-latest
     steps:
+      
+
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
       - name: Wait for Netlify Deploy Preview
         id: wait_for_preview
@@ -50,16 +53,21 @@ jobs:
 
           timeout 600 bash -c '
             while true; do
-              SUITE_JSON=$(gh api repos/"$REPO"/commits/"$SHA"/check-suites --jq "[ .check_suites[] | select(.app.slug == \"netlify\") ]" 2>/dev/null)
-              if [ "$(echo "$SUITE_JSON" | jq length)" -eq 0 ]; then sleep 15; continue; fi
-              STATUS=$(echo "$SUITE_JSON" | jq -r ".[0].status")
-              CONCLUSION=$(echo "$SUITE_JSON" | jq -r ".[0].conclusion")
+              SUITE_JSON=$(gh api repos/"$REPO"/commits/"$SHA"/check-suites 2>/dev/null)
+              NETLIFY_SUITE=$(echo "$SUITE_JSON" | jq "[ .check_suites[]? | select(.app.slug == \"netlify\") ]")
+              COUNT=$(echo "$NETLIFY_SUITE" | jq "length")
+              if [ "$COUNT" -eq 0 ]; then sleep 15; continue; fi
+              STATUS=$(echo "$NETLIFY_SUITE" | jq -r ".[0].status")
+              CONCLUSION=$(echo "$NETLIFY_SUITE" | jq -r ".[0].conclusion")
+              echo "Netlify suite status: $STATUS, conclusion: $CONCLUSION"
               if [ "$STATUS" = "completed" ]; then
                 if [[ "$CONCLUSION" = "success" || "$CONCLUSION" = "neutral" ]]; then
                   PREVIEW_URL=$(gh api repos/"$REPO"/commits/"$SHA"/status --jq ".statuses[] | select(.context==\"netlify/open-component-model/deploy-preview\") | .target_url" 2>/dev/null)
+                  echo "✅ Deploy Preview ready: $PREVIEW_URL"
                   echo "preview_url=$PREVIEW_URL" >> $GITHUB_OUTPUT
                   exit 0
                 else
+                  echo "❌ Deploy failed: $CONCLUSION"
                   exit 1
                 fi
               fi
@@ -82,11 +90,11 @@ jobs:
           ignorePatterns:
             - pattern: '/images/.*'
           EOF
-          
           echo "Generated config:"
           cat .github/config/linkspector.yaml
         env:
           BASEURL: ${{ steps.wait_for_preview.outputs.preview_url }}
+
       - name: Run linkspector
         uses: umbrelladocs/action-linkspector@874d01cae9fd488e3077b08952093235bd626977 # v1
         with:
