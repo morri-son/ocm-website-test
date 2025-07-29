@@ -52,39 +52,30 @@ jobs:
           timeout 600 bash -c '
             set -euo pipefail
 
-          retry_gh_api() {
-            local cmd="$1"
-            local max_attempts=5
-            local attempt=1
-            while [ $attempt -le $max_attempts ]; do
-              local result
-              result=$(eval "$cmd" 2>/dev/null || true)
-              if [ -n "$result" ]; then
-                echo "$result"
-                return 0
-              fi
-              echo "gh api attempt $attempt failed, retrying..." >&2
-              sleep 2
-              attempt=$((attempt+1))
-            done
-            echo "gh api failed after $max_attempts attempts" >&2
-            return 1
-          }
-
-              if [ -n "$result" ]; then
-                echo "$result"
-                return 0
-              fi
-              echo "gh api attempt $attempt failed, retrying..." >&2
-              sleep 2
-              attempt=$((attempt+1))
-            done
-            echo "gh api failed after $max_attempts attempts" >&2
-            return 1
-          }
+            retry_gh_api() {
+              local cmd="$1"
+              local max_attempts=5
+              local attempt=1
+              while [ $attempt -le $max_attempts ]; do
+                local result=""
+                result=$(eval "$cmd" 2>/dev/null || true)
+                if [ -n "$result" ]; then
+                  echo "$result"
+                  return 0
+                fi
+                echo "gh api attempt $attempt failed, retrying..." >&2
+                sleep 2
+                attempt=$((attempt+1))
+              done
+              echo "gh api failed after $max_attempts attempts" >&2
+              return 1
+            }
 
             while true; do
-              SUITE_JSON=$(retry_gh_api "gh api repos/\"$REPO\"/commits/\"$SHA\"/check-suites --jq '[ .check_suites[] | select(.app.slug == \"netlify\") ]'" || true)
+              SUITE_JSON=""
+              if ! SUITE_JSON=$(retry_gh_api "gh api repos/\"$REPO\"/commits/\"$SHA\"/check-suites --jq '[ .check_suites[] | select(.app.slug == \"netlify\") ]'"); then
+                SUITE_JSON=""
+              fi
 
               if [ -z "$SUITE_JSON" ] || [ "$(echo "$SUITE_JSON" | jq length || echo 0)" -eq 0 ]; then
                 sleep 5
@@ -99,7 +90,11 @@ jobs:
 
               if [ "$STATUS" = "completed" ]; then
                 if [[ "$CONCLUSION" = "success" || "$CONCLUSION" = "neutral" ]]; then
-                  STATUS_JSON=$(retry_gh_api "gh api repos/\"$REPO\"/commits/\"$SHA\"/status --jq '.statuses[] | select(.context==\"netlify/open-component-model/deploy-preview\")'" || true)
+                  STATUS_JSON=""
+                  if ! STATUS_JSON=$(retry_gh_api "gh api repos/\"$REPO\"/commits/\"$SHA\"/status --jq '.statuses[] | select(.context==\"netlify/open-component-model/deploy-preview\")'"); then
+                    echo "❌ Could not fetch Netlify deploy status"
+                    exit 1
+                  fi
 
                   PREVIEW_URL=$(echo "$STATUS_JSON" | jq -r ".target_url" || echo "")
 
@@ -135,7 +130,7 @@ jobs:
           ignorePatterns:
             - pattern: '/images/.*'
           EOF
-          
+
           echo "Generated config:"
           cat .github/config/linkspector.yaml
         env:
