@@ -81,7 +81,7 @@ jobs:
                     exit 2
                   fi
 
-                  PREVIEW_URL=$(echo "$STATUS_JSON" | jq -r '.target_url')
+                  PREVIEW_URL=$(echo "$STATUS_JSON" | jq -r '.statuses[] | select(.context | test("netlify.*deploy-preview")) | .target_url' | head -n1)
 
                   if [ -z "$PREVIEW_URL" ] || [ "$PREVIEW_URL" = "null" ]; then
                     echo "❌ Deploy Preview URL konnte nicht ermittelt werden."
