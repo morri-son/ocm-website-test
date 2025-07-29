@@ -102,7 +102,7 @@ jobs:
                     echo "[ERROR] gh api failed to fetch status JSON"
                     exit 1
                   fi
-                  PREVIEW_URL=$(echo "$STATUS_JSON" | jq -r ".statuses[] | select(.context==\"netlify/${REPO}/deploy-preview\") | .target_url" 2>&1)
+                  PREVIEW_URL=$(echo "$STATUS_JSON" | jq -r ".statuses[] | select(.context==\"netlify/ocm-website-test/deploy-preview\") | .target_url" 2>&1)
                   PREVIEW_EXIT_CODE=$?
                   echo "[DEBUG] jq preview_url exit code: $PREVIEW_EXIT_CODE"
                   echo "[DEBUG] PREVIEW_URL: $PREVIEW_URL"
