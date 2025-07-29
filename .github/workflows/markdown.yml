@@ -47,56 +47,56 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -euo pipefail  # Exit on error, undefined vars, pipe failures
+          set -euo pipefail
           
           echo "Waiting up to 8 minutes for Netlify deploy preview..."
           export REPO="${{ github.repository }}"
           export SHA="${{ github.event.pull_request.head.sha || github.sha }}"
-          
-          # Function to get Netlify suite info with proper error handling
-          get_netlify_suite() {
-            local output
-            local exit_code
-            
-            if ! output=$(gh api repos/"$REPO"/commits/"$SHA"/check-suites 2>&1); then
-              echo "API_ERROR: Failed to fetch check-suites: $output" >&2
-              return 1
-            fi
-            
-            local suite_info
-            if ! suite_info=$(echo "$output" | jq -r '.check_suites[] | select(.app.slug == "netlify") | {id, status, conclusion}' 2>/dev/null); then
-              echo "null"
-              return 0
-            fi
-            
-            if [ -z "$suite_info" ] || [ "$suite_info" = "null" ]; then
-              echo "null"
-            else
-              echo "$suite_info"
-            fi
-          }
-          
-          # Function to get deploy preview URL with proper error handling
-          get_preview_url() {
-            local output
-            local preview_url
-            
-            if ! output=$(gh api repos/"$REPO"/commits/"$SHA"/status 2>&1); then
-              echo "API_ERROR: Failed to fetch status: $output" >&2
-              return 1
-            fi
-            
-            if ! preview_url=$(echo "$output" | jq -r '.statuses[] | select(.context=="netlify/open-component-model/deploy-preview") | .target_url' 2>/dev/null | head -1); then
-              return 1
-            fi
-            
-            if [ -n "$preview_url" ] && [ "$preview_url" != "null" ]; then
-              echo "$preview_url"
-            fi
-          }
 
           timeout 480 bash -c '
             set -euo pipefail
+            
+            # Function to get Netlify suite info with proper error handling
+            get_netlify_suite() {
+              local output
+              
+              if ! output=$(gh api repos/"$REPO"/commits/"$SHA"/check-suites 2>&1); then
+                echo "API_ERROR: Failed to fetch check-suites: $output" >&2
+                return 1
+              fi
+              
+              local suite_info
+              if ! suite_info=$(echo "$output" | jq -r ".check_suites[] | select(.app.slug == \"netlify\") | {id, status, conclusion}" 2>/dev/null); then
+                echo "null"
+                return 0
+              fi
+              
+              if [ -z "$suite_info" ] || [ "$suite_info" = "null" ]; then
+                echo "null"
+              else
+                echo "$suite_info"
+              fi
+            }
+            
+            # Function to get deploy preview URL with proper error handling
+            get_preview_url() {
+              local output
+              local preview_url
+              
+              if ! output=$(gh api repos/"$REPO"/commits/"$SHA"/status 2>&1); then
+                echo "API_ERROR: Failed to fetch status: $output" >&2
+                return 1
+              fi
+              
+              if ! preview_url=$(echo "$output" | jq -r ".statuses[] | select(.context==\"netlify/open-component-model/deploy-preview\") | .target_url" 2>/dev/null | head -1); then
+                return 1
+              fi
+              
+              if [ -n "$preview_url" ] && [ "$preview_url" != "null" ]; then
+                echo "$preview_url"
+              fi
+            }
+            
             INITIAL_WAIT=true
             API_ERROR_COUNT=0
             MAX_API_ERRORS=5
