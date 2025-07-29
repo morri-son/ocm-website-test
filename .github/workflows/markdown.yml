@@ -52,10 +52,10 @@ jobs:
           timeout 600 bash -c '
             set -eo pipefail
             retry_gh_api() {
-              local cmd="$1"
-              local max_attempts=5
-              local attempt=1
-              local result=""
+              cmd="$1"
+              max_attempts=5
+              attempt=1
+              result=""
               while [ $attempt -le $max_attempts ]; do
                 result=$(eval "$cmd" 2>/dev/null || true)
                 if [ -n "$result" ]; then
@@ -72,7 +72,7 @@ jobs:
 
             while true; do
               # Get check suite for Netlify app
-              SUITE_JSON=$(retry_gh_api "gh api repos/\"$REPO\"/commits/\"$SHA\"/check-suites --jq '[ .check_suites[] | select(.app.slug == \"netlify\") ]'")
+              SUITE_JSON=$(retry_gh_api 'gh api repos/'"$REPO"'/commits/'"$SHA"'/check-suites --jq "[ .check_suites[] | select(.app.slug == \"netlify\") ]"')
 
               # no suite available? sleep and retry
               if [ -z "$SUITE_JSON" ] || [ "$(echo "$SUITE_JSON" | jq length)" -eq 0 ]; then
@@ -90,7 +90,7 @@ jobs:
               if [ "$STATUS" = "completed" ]; then
                 if [[ "$CONCLUSION" = "success" || "$CONCLUSION" = "neutral" ]]; then
                   # Get deploy preview URL from status
-                  STATUS_JSON=$(retry_gh_api "gh api repos/\"$REPO\"/commits/\"$SHA\"/status --jq '.statuses[] | select(.context==\"netlify/open-component-model/deploy-preview\")'")
+                  STATUS_JSON=$(retry_gh_api 'gh api repos/'"$REPO"'/commits/'"$SHA"'/status --jq ".statuses[] | select(.context==\\\"netlify/open-component-model/deploy-preview\\\")"')
 
                   PREVIEW_URL=$(echo "$STATUS_JSON" | jq -r '.target_url')
 
