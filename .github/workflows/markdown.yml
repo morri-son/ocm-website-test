@@ -23,10 +23,22 @@ jobs:
           globs: '**/*.md'
           separator: ","
           config: .github/config/.markdownlint-cli2.yaml
+
+  spellcheck:
+    name: Spellcheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - name: Spellcheck
+        uses: rojopolis/spellcheck-github-actions@35a02bae020e6999c5c37fabaf447f2eb8822ca7 # v0
+        with:
+          config_path: .github/config/spellcheck.yml
+          task_name: Markdown
   verify-links:
     name: Verify links
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
       - name: Wait for Netlify Deploy Preview
         id: wait_for_preview
@@ -36,15 +48,21 @@ jobs:
           echo "Waiting up to 10 minutes for Netlify deploy preview..."
           REPO="${{ github.repository }}"
           SHA="${{ github.event.pull_request.head.sha }}"
+          REPO="${{ github.repository }}"
+          SHA="${{ github.event.pull_request.head.sha }}"
 
           timeout 600 bash -c '
             while true; do
               SUITE_JSON=$(gh api repos/"$REPO"/commits/"$SHA"/check-suites --jq "[ .check_suites[] | select(.app.slug == \"netlify\") ]" 2>/dev/null)
               if [ "$(echo "$SUITE_JSON" | jq length)" -eq 0 ]; then sleep 15; continue; fi
               STATUS=$(echo "$SUITE_JSON" | jq -r ".[0].status")
+              SUITE_JSON=$(gh api repos/"$REPO"/commits/"$SHA"/check-suites --jq "[ .check_suites[] | select(.app.slug == \"netlify\") ]" 2>/dev/null)
+              if [ "$(echo "$SUITE_JSON" | jq length)" -eq 0 ]; then sleep 15; continue; fi
+              STATUS=$(echo "$SUITE_JSON" | jq -r ".[0].status")
               CONCLUSION=$(echo "$SUITE_JSON" | jq -r ".[0].conclusion")
               if [ "$STATUS" = "completed" ]; then
                 if [[ "$CONCLUSION" = "success" || "$CONCLUSION" = "neutral" ]]; then
+                  PREVIEW_URL=$(gh api repos/"$REPO"/commits/"$SHA"/status --jq ".statuses[] | select(.context==\"netlify/open-component-model/deploy-preview\") | .target_url" 2>/dev/null)
                   PREVIEW_URL=$(gh api repos/"$REPO"/commits/"$SHA"/status --jq ".statuses[] | select(.context==\"netlify/open-component-model/deploy-preview\") | .target_url" 2>/dev/null)
                   echo "preview_url=$PREVIEW_URL" >> $GITHUB_OUTPUT
                   exit 0
@@ -60,7 +78,9 @@ jobs:
             exit 1
           fi
 
-      - name: Debug and Generate linkspector config
+      - name: Generate linkspector config
+        # The linkspector config needs to be generated dynamically as
+        # the action does not support passing the base URL as an environment variable.
         run: |
           cat > .github/config/linkspector.yaml << EOF
           dirs:
@@ -84,13 +104,5 @@ jobs:
           show_stats: true
         env:
           BASEURL: ${{ steps.wait_for_preview.outputs.preview_url }}
-  spellcheck:
-    name: Spellcheck
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
-      - name: Spellcheck
-        uses: rojopolis/spellcheck-github-actions@35a02bae020e6999c5c37fabaf447f2eb8822ca7 # v0
-        with:
-          config_path: .github/config/spellcheck.yml
-          task_name: Markdown
+          
+
