@@ -44,72 +44,33 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -euo pipefail
           echo "Waiting up to 10 minutes for Netlify deploy preview..."
-          REPO="${{ github.repository }}"
-          SHA="${{ github.event.pull_request.head.sha }}"
+          export REPO="${{ github.repository }}"
+          export SHA="${{ github.event.pull_request.head.sha }}"
 
           timeout 600 bash -c '
-            export GH_TOKEN
             while true; do
-              echo "[DEBUG] Requesting check-suites from GitHub API..."
-              SUITE_JSON=$(gh api repos/"$REPO"/commits/"$SHA"/check-suites 2>&1)
-              EXIT_CODE=$?
-              echo "[DEBUG] gh api exit code: $EXIT_CODE"
-              echo "[DEBUG] SUITE_JSON: $SUITE_JSON"
-              if [ $EXIT_CODE -ne 0 ]; then
-                echo "[ERROR] gh api failed to fetch check-suites"
+              SUITE_JSON=$(gh api repos/"$REPO"/commits/"$SHA"/check-suites \
+                --jq "[ .check_suites[] | select(.app.slug == \"netlify\") ]" 2>/dev/null)
+
+              if [ "$(echo "$SUITE_JSON" | jq length)" -eq 0 ]; then
                 sleep 5
                 continue
               fi
 
-              echo "[DEBUG] Filtering Netlify check suites with jq..."
-              SUITES=$(echo "$SUITE_JSON" | jq "[ .check_suites[] | select(.app.slug == \"netlify\") ]" 2>&1)
-              JQ_EXIT_CODE=$?
-              echo "[DEBUG] jq exit code: $JQ_EXIT_CODE"
-              echo "[DEBUG] SUITES: $SUITES"
-              if [ $JQ_EXIT_CODE -ne 0 ]; then
-                echo "[ERROR] jq failed to parse check-suites JSON"
-                sleep 5
-                continue
-              fi
-
-              SUITES_LEN=$(echo "$SUITES" | jq length 2>/dev/null || echo 0)
-              echo "[DEBUG] SUITES_LEN: $SUITES_LEN"
-              if [ "$SUITES_LEN" -eq 0 ]; then
-                echo "[INFO] No Netlify check suite found yet"
-                sleep 5
-                continue
-              fi
-
-              SUITE_ID=$(echo "$SUITES" | jq -r ".[0].id" 2>&1)
-              STATUS=$(echo "$SUITES" | jq -r ".[0].status" 2>&1)
-              CONCLUSION=$(echo "$SUITES" | jq -r ".[0].conclusion" 2>&1)
-              echo "[DEBUG] SUITE_ID: $SUITE_ID"
-              echo "[DEBUG] STATUS: $STATUS"
-              echo "[DEBUG] CONCLUSION: $CONCLUSION"
+              SUITE_ID=$(echo "$SUITE_JSON" | jq -r ".[0].id")
+              STATUS=$(echo "$SUITE_JSON" | jq -r ".[0].status")
+              CONCLUSION=$(echo "$SUITE_JSON" | jq -r ".[0].conclusion")
 
               echo "Netlify suite status: $STATUS, conclusion: $CONCLUSION"
 
               if [ "$STATUS" = "completed" ]; then
                 if [[ "$CONCLUSION" = "success" || "$CONCLUSION" = "neutral" ]]; then
-                  echo "[DEBUG] Fetching status for deploy preview URL..."
-                  STATUS_JSON=$(gh api repos/"$REPO"/commits/"$SHA"/status 2>&1)
-                  STATUS_EXIT_CODE=$?
-                  echo "[DEBUG] gh api status exit code: $STATUS_EXIT_CODE"
-                  echo "[DEBUG] STATUS_JSON: $STATUS_JSON"
-                  if [ $STATUS_EXIT_CODE -ne 0 ]; then
-                    echo "[ERROR] gh api failed to fetch status JSON"
-                    exit 1
-                  fi
-                  PREVIEW_URL=$(echo "$STATUS_JSON" | jq -r ".statuses[] | select(.context==\"netlify/ocm-website-test/deploy-preview\") | .target_url" 2>&1)
-                  PREVIEW_EXIT_CODE=$?
-                  echo "[DEBUG] jq preview_url exit code: $PREVIEW_EXIT_CODE"
-                  echo "[DEBUG] PREVIEW_URL: $PREVIEW_URL"
-                  if [ $PREVIEW_EXIT_CODE -ne 0 ] || [ -z "$PREVIEW_URL" ] || [[ "$PREVIEW_URL" == *"null"* ]]; then
-                    echo "[ERROR] Preview URL not found"
-                    exit 1
-                  fi
+                  STATUS_JSON=$(gh api repos/"$REPO"/commits/"$SHA"/status \
+                    --jq ".statuses[] | select(.context==\"netlify/ocm-website-test/deploy-preview\")" 2>/dev/null)
+
+                  PREVIEW_URL=$(echo "$STATUS_JSON" | jq -r '.target_url')
+
                   echo "✅ Deploy Preview ready: $PREVIEW_URL"
                   echo "preview_url=$PREVIEW_URL" >> $GITHUB_OUTPUT
                   exit 0
@@ -118,13 +79,11 @@ jobs:
                   exit 1
                 fi
               fi
-              echo "[INFO] Still pending, sleeping 15s..."
               sleep 15
             done
           '
 
-          EXIT_CODE=$?
-          if [ $EXIT_CODE -eq 124 ]; then
+          if [ $? -eq 124 ]; then
             echo "❌ Timeout after 10 minutes"
             exit 1
           fi
