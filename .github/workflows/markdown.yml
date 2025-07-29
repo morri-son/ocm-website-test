@@ -53,8 +53,8 @@ jobs:
             set -e
             while true; do
               # Get check suite for Netlify app
-              SUITE_JSON=""
-              if ! SUITE_JSON=$(gh api repos/"$REPO"/commits/"$SHA"/check-suites --jq "[ .check_suites[] | select(.app.slug == \"netlify\") ]" 2>/dev/null); then
+              SUITE_JSON=$(gh api repos/"$REPO"/commits/"$SHA"/check-suites --jq "[ .check_suites[] | select(.app.slug == \"netlify\") ]" 2>/dev/null)
+              if [ $? -ne 0 ]; then
                 echo "❌ Fehler beim Aufruf von gh API (check-suites)"
                 sleep 5
                 continue
@@ -76,13 +76,13 @@ jobs:
               if [ "$STATUS" = "completed" ]; then
                 if [[ "$CONCLUSION" = "success" || "$CONCLUSION" = "neutral" ]]; then
                   # Get deploy preview URL from status
-                  STATUS_JSON=""
-                  if ! STATUS_JSON=$(gh api repos/"$REPO"/commits/"$SHA"/status --jq ".statuses[] | select(.context==\"netlify/open-component-model/deploy-preview\")" 2>/dev/null); then
+                  STATUS_JSON=$(gh api repos/"$REPO"/commits/"$SHA"/status 2>/dev/null)
+                  if [ $? -ne 0 ]; then
                     echo "❌ Fehler beim Aufruf von gh API (status)"
                     exit 2
                   fi
 
-                  PREVIEW_URL=$(echo "$STATUS_JSON" | jq -r '.target_url')
+                  PREVIEW_URL=$(echo "$STATUS_JSON" | jq -r '.statuses[] | select(.context=="netlify/open-component-model/deploy-preview") | .target_url')
 
                   if [ -z "$PREVIEW_URL" ] || [ "$PREVIEW_URL" = "null" ]; then
                     echo "❌ Deploy Preview URL konnte nicht ermittelt werden."
