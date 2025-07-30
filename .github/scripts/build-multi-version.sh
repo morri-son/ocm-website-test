@@ -1,10 +1,5 @@
-done
-declare -A BUILT_VERSIONS
-done
-done
-
 #!/usr/bin/env bash
-set -euox pipefail
+set -euo pipefail
 
 # Multi-Version Build Script for OCM Website
 # Usage: ./github/scripts/build-multi-version.sh
@@ -93,7 +88,7 @@ for VERSION in $VERSIONS; do
     info "package-lock.json is identical, creating symlink to central node_modules."
     ln -s ../../node_modules ./node_modules
   else
-    info "package-lock.json differs, running npm ci in worktree."
+    info "package-lock.json differs from central version. Installing separate dependencies for this version."
     npm ci || { err "npm ci failed for $BRANCH"; popd >/dev/null; exit 1; }
   fi
 
