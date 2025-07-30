@@ -5,6 +5,7 @@
   "author": "open-component-model",
   "license": "Apache-2.0",
   "scripts": {
+    "build-multi-version": "bash .github/scripts/build-multi-version.sh",
     "build": "exec-bin node_modules/.bin/hugo/hugo --minify --gc",
     "clean:build": "shx rm -rf public resources .hugo_build.lock",
     "clean:install": "shx rm -rf node_modules package-lock.json yarn.lock pnpm-lock.yaml",
