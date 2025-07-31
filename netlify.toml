@@ -2,14 +2,7 @@
   publish = "public"
 
 [context.deploy-preview]
-  command = """
-    echo "Testing basic requirements:" &&
-    which git && which npm && which jq && which cmp &&
-    echo "File access test:" &&
-    head -5 .github/scripts/build-multi-version.sh &&
-    echo "Now running script:" &&
-    bash .github/scripts/build-multi-version.sh $DEPLOY_PRIME_URL
-  """
+  command = "bash build-multi-version.sh $DEPLOY_PRIME_URL"
 
 # Redirects für versionierte Pfade
 [[redirects]]
