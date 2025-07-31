@@ -1,7 +1,83 @@
 // Put your custom JS code here
 console.log('=== CUSTOM JS LOADED ===');
 
-// Prevent multiple executions with a more robust check
+// Version Switcher: Robuste Navigation mit Fallback auf existierende Section
+document.querySelectorAll('.version-switch-link').forEach(function(link) {
+  link.addEventListener('click', function(e) {
+    e.preventDefault();
+    var targetVersion = link.getAttribute('data-version');
+    var defaultVersion = link.getAttribute('data-default-version');
+    var currentPath = window.location.pathname;
+    var baseUrl = window.location.origin;
+
+    // Hilfsfunktion: Extrahiere Section und Rest
+    function parsePath(path, defaultVersion) {
+      var parts = path.split('/').filter(Boolean);
+      var version = defaultVersion;
+      var sectionIdx = 0;
+      if (parts.length > 0 && parts[0] === defaultVersion) {
+        // Default-Version: /docs/... oder /community/...
+        sectionIdx = 0;
+      } else if (parts.length > 1 && linkVersions.includes(parts[0])) {
+        // Andere Version: /<version>/docs/... oder /<version>/community/...
+        version = parts[0];
+        sectionIdx = 1;
+      }
+      var section = parts[sectionIdx] || 'docs';
+      var rest = parts.slice(sectionIdx + 1).join('/');
+      return { version, section, rest };
+    }
+
+    // Hole alle Versionen aus dem Dropdown
+    var linkVersions = Array.from(document.querySelectorAll('.version-switch-link')).map(function(l) {
+      return l.getAttribute('data-version');
+    });
+
+    var parsed = parsePath(currentPath, defaultVersion);
+    var section = parsed.section;
+    var rest = parsed.rest;
+
+    // Ziel-URL bauen
+    function buildUrl(version, section, rest) {
+      if (version === defaultVersion) {
+        return baseUrl + '/' + section + (rest ? '/' + rest : '/');
+      } else {
+        return baseUrl + '/' + version + '/' + section + (rest ? '/' + rest : '/');
+      }
+    }
+
+    // Rekursive Fallback-Logik: Prüfe, ob Seite existiert, springe ggf. zur Section
+    function tryNavigate(version, section, rest) {
+      var url = buildUrl(version, section, rest);
+      fetch(url, { method: 'HEAD' }).then(function(resp) {
+        if (resp.ok) {
+          window.location.href = url;
+        } else {
+          // Fallback: eine Ebene höher
+          if (rest && rest.includes('/')) {
+            var newRest = rest.split('/').slice(0, -1).join('/');
+            tryNavigate(version, section, newRest);
+          } else {
+            // Fallback: nur Section
+            var sectionUrl = buildUrl(version, section, '');
+            fetch(sectionUrl, { method: 'HEAD' }).then(function(resp2) {
+              if (resp2.ok) {
+                window.location.href = sectionUrl;
+              } else {
+                // Fallback: /docs/ oder /community/
+                var mainSection = section === 'community' ? 'community' : 'docs';
+                var mainUrl = buildUrl(version, mainSection, '');
+                window.location.href = mainUrl;
+              }
+            });
+          }
+        }
+      });
+    }
+
+    tryNavigate(targetVersion, section, rest);
+  });
+});
 if (window.ocmSidebarToggleSetup) {
   console.log('OCM Sidebar toggle already setup, skipping...');
 } else {
