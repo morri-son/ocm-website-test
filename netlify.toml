@@ -2,7 +2,7 @@
   publish = "public"
 
 [context.deploy-preview]
-  command = "bash build-multi-version.sh $DEPLOY_PRIME_URL"
+  command = "bash netlify-multi-version-build-wrapper.sh $DEPLOY_PRIME_URL"
 
 # Redirects für versionierte Pfade
 [[redirects]]
