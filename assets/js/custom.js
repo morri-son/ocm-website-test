@@ -10,16 +10,17 @@ document.querySelectorAll('.version-switch-link').forEach(function(link) {
     var currentPath = window.location.pathname;
     var baseUrl = window.location.origin;
 
+    // Hole alle Versionen aus dem Dropdown
+    var linkVersions = Array.from(document.querySelectorAll('.version-switch-link')).map(function(l) {
+      return l.getAttribute('data-version');
+    });
+
     // Hilfsfunktion: Extrahiere Section und Rest
     function parsePath(path, defaultVersion) {
       var parts = path.split('/').filter(Boolean);
       var version = defaultVersion;
       var sectionIdx = 0;
-      if (parts.length > 0 && parts[0] === defaultVersion) {
-        // Default-Version: /docs/... oder /community/...
-        sectionIdx = 0;
-      } else if (parts.length > 1 && linkVersions.includes(parts[0])) {
-        // Andere Version: /<version>/docs/... oder /<version>/community/...
+      if (parts.length > 0 && linkVersions.includes(parts[0])) {
         version = parts[0];
         sectionIdx = 1;
       }
@@ -27,11 +28,6 @@ document.querySelectorAll('.version-switch-link').forEach(function(link) {
       var rest = parts.slice(sectionIdx + 1).join('/');
       return { version, section, rest };
     }
-
-    // Hole alle Versionen aus dem Dropdown
-    var linkVersions = Array.from(document.querySelectorAll('.version-switch-link')).map(function(l) {
-      return l.getAttribute('data-version');
-    });
 
     var parsed = parsePath(currentPath, defaultVersion);
     var section = parsed.section;
@@ -78,6 +74,53 @@ document.querySelectorAll('.version-switch-link').forEach(function(link) {
     tryNavigate(targetVersion, section, rest);
   });
 });
+
+// Markiere die aktive Version im Switcher
+function markActiveVersion() {
+  var currentPath = window.location.pathname;
+  var linkVersions = Array.from(document.querySelectorAll('.version-switch-link')).map(function(l) {
+    return l.getAttribute('data-version');
+  });
+  var defaultVersion = document.querySelector('.version-switch-link')?.getAttribute('data-default-version');
+  var parts = currentPath.split('/').filter(Boolean);
+  var activeVersion = defaultVersion;
+
+  // / → defaultVersion
+  if (parts.length === 0) {
+    activeVersion = defaultVersion;
+  }
+  // /<version>/ → Version
+  else if (parts.length === 1 && linkVersions.includes(parts[0])) {
+    activeVersion = parts[0];
+  }
+  // /docs/ oder /community/ → defaultVersion
+  else if (parts.length === 1 && (parts[0] === 'docs' || parts[0] === 'community')) {
+    activeVersion = defaultVersion;
+  }
+  // /<version>/docs/ oder /<version>/community/ → Version
+  else if (parts.length >= 2 && linkVersions.includes(parts[0]) && (parts[1] === 'docs' || parts[1] === 'community')) {
+    activeVersion = parts[0];
+  }
+  // /<version>/irgendwas → Version
+  else if (parts.length >= 1 && linkVersions.includes(parts[0])) {
+    activeVersion = parts[0];
+  }
+  // Sonst: defaultVersion
+  else {
+    activeVersion = defaultVersion;
+  }
+
+  document.querySelectorAll('.version-switch-link').forEach(function(link) {
+    if (link.getAttribute('data-version') === activeVersion) {
+      link.classList.add('active');
+      link.setAttribute('aria-current', 'true');
+    } else {
+      link.classList.remove('active');
+      link.removeAttribute('aria-current');
+    }
+  });
+}
+document.addEventListener('DOMContentLoaded', markActiveVersion);
 if (window.ocmSidebarToggleSetup) {
   console.log('OCM Sidebar toggle already setup, skipping...');
 } else {
