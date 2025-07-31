@@ -93,6 +93,13 @@ for VERSION in $VERSIONS; do
   git worktree add "$WORKTREE_BASE/$VERSION" "$BRANCH" || { err "Failed to add worktree for $BRANCH"; exit 1; }
   pushd "$WORKTREE_BASE/$VERSION" >/dev/null
 
+
+  # Copy the latest data/versions.json from main into the worktree (for version switcher)
+  if [ "$VERSION" != "dev" ]; then
+    cp ../../data/versions.json data/versions.json
+    info "Copied latest data/versions.json into worktree for $VERSION."
+  fi
+
   # Update Hugo modules for the branch
   hugo mod get -u || { err "hugo mod get -u failed for $BRANCH"; popd >/dev/null; exit 1; }
   hugo mod tidy || { err "hugo mod tidy failed for $BRANCH"; popd >/dev/null; exit 1; }
