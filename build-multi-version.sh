@@ -66,13 +66,28 @@ git worktree prune  # Clean up any stale worktrees
 # BUILT_VERSIONS will hold the mapping: version -> output directory
 declare -A BUILT_VERSIONS
 for VERSION in $VERSIONS; do
-  # Determine branch and output directory for each version
+
+  # Determine branch and output directory for each version (PR-aware)
+  CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+  # Map version to branch: dev->main, 1.0->website/1.0, ...
   if [ "$VERSION" = "dev" ]; then
-    BRANCH="main"
+    UPSTREAM_BRANCH="main"
     OUTDIR="$PUBLIC_DIR/dev"
-    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-    # If main is already checked out, build directly in main working directory
-    if [ "$CURRENT_BRANCH" = "main" ]; then
+  else
+    UPSTREAM_BRANCH="website/$VERSION"
+    if [ "$VERSION" = "$DEFAULT_VERSION" ]; then
+      OUTDIR="$PUBLIC_DIR"
+    else
+      OUTDIR="$PUBLIC_DIR/$VERSION"
+    fi
+  fi
+
+  # Use PR branch for the version that matches the target branch, else upstream branch
+  if [ "$CURRENT_BRANCH" = "$UPSTREAM_BRANCH" ]; then
+    # Special case: if PR branch is already checked out (local build on branch)
+    BRANCH="$CURRENT_BRANCH"
+    if [ "$VERSION" = "dev" ] && [ "$CURRENT_BRANCH" = "main" ]; then
+      # dev build from main working directory
       info "Building dev version directly from main working directory"
       npm run hugo --  mod get -u || { err "hugo mod get -u failed for main"; exit 1; }
       npm run hugo --  mod tidy || { err "hugo mod tidy failed for main"; exit 1; }
@@ -81,12 +96,8 @@ for VERSION in $VERSIONS; do
       BUILT_VERSIONS["$VERSION"]="$OUTDIR"
       continue
     fi
-  elif [ "$VERSION" = "$DEFAULT_VERSION" ]; then
-    BRANCH="website/$VERSION"
-    OUTDIR="$PUBLIC_DIR"
   else
-    BRANCH="website/$VERSION"
-    OUTDIR="$PUBLIC_DIR/$VERSION"
+    BRANCH="$UPSTREAM_BRANCH"
   fi
 
   info "Building version $VERSION from branch $BRANCH into $OUTDIR"
