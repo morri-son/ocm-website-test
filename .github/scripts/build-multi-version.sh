@@ -88,8 +88,8 @@ for VERSION in $VERSIONS; do
   if [ "$VERSION" = "$CURRENT_DOCSVERSION" ]; then
     # Build this version from current branch (no worktree)
     info "Building $VERSION version directly from current branch ($CURRENT_BRANCH) into $OUTDIR"
-    hugo mod get -u || { err "hugo mod get -u failed for $CURRENT_BRANCH"; exit 1; }
-    hugo mod tidy || { err "hugo mod tidy failed for $CURRENT_BRANCH"; exit 1; }
+    npm run hugo -- mod get -u || { err "hugo mod get -u failed for $CURRENT_BRANCH"; exit 1; }
+    npm run hugo -- mod tidy || { err "hugo mod tidy failed for $CURRENT_BRANCH"; exit 1; }
     npm ci || { err "npm ci failed for $CURRENT_BRANCH"; exit 1; }
     npm run build -- --destination "$OUTDIR" --baseURL "$BASE_URL/$VERSION" || { err "npm run build failed for $CURRENT_BRANCH"; exit 1; }
     BUILT_VERSIONS["$VERSION"]="$OUTDIR"
@@ -121,8 +121,8 @@ for VERSION in $VERSIONS; do
   fi
 
   # Update Hugo modules for the branch
-  npm run hugo --  mod get -u || { err "hugo mod get -u failed for $BRANCH"; popd >/dev/null; exit 1; }
-  npm run hugo --  mod tidy || { err "hugo mod tidy failed for $BRANCH"; popd >/dev/null; exit 1; }
+  npm run hugo -- mod get -u || { err "hugo mod get -u failed for $BRANCH"; popd >/dev/null; exit 1; }
+  npm run hugo -- mod tidy || { err "hugo mod tidy failed for $BRANCH"; popd >/dev/null; exit 1; }
 
   # Build the site for this version
   if [ "$VERSION" = "$DEFAULT_VERSION" ]; then
