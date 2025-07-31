@@ -2,8 +2,13 @@
   publish = "public"
 
 [context.deploy-preview]
-  command = "echo '#!/bin/bash\nexec .github/scripts/build-multi-version.sh \"$@\"' > build.sh && chmod +x build.sh && ./build.sh $DEPLOY_PRIME_URL"
-
+  command = '''
+    echo "#!/bin/bash" > build.sh &&
+    echo "exec .github/scripts/build-multi-version.sh \\"$@\\"" >> build.sh &&
+    chmod +x build.sh &&
+    ./build.sh $DEPLOY_PRIME_URL
+  '''
+  
 # Redirects für versionierte Pfade
 [[redirects]]
   from = "/dev/*"
