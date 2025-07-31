@@ -30,7 +30,7 @@ err() { echo "[ERROR] $*" >&2; }
 info() { echo "[INFO] $*"; }
 
 # Check required commands
-for cmd in git hugo npm jq cmp; do
+for cmd in git npm jq cmp; do
   if ! command -v "$cmd" &>/dev/null; then
     err "$cmd is required but not installed."
     exit 1
