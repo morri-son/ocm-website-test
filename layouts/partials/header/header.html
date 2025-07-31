@@ -208,16 +208,11 @@
         </div>
         {{ end -}}
 
-        <!-- Versioning dropdown -->
+        <!-- Vereinfachter Versioning dropdown -->
         {{ if site.Params.doks.docsVersioning }}
-        {{/* load versions.json from data/ */}}
         {{ $versionsData := site.Data.versions }}
-
         {{ if $versionsData.versions }}
         {{ $currentVer := site.Params.doks.docsVersion }}
-        {{ $defaultVer := $versionsData.defaultVersion }}
-        {{ $currentPath := .RelPermalink }}
-
         <div class="dropdown mt-1 order-lg-1">
           <button class="btn btn-dropdown dropdown-toggle"
                   id="doks-versions"
@@ -237,31 +232,15 @@
               </svg>
             </span>
           </button>
-          
           <ul class="dropdown-menu dropdown-menu-lg-end me-lg-2 shadow rounded border-0"
               aria-labelledby="doks-versions">
             {{ range $versionsData.versions }}
-              {{ $isDefault := eq . $defaultVer }}
-              {{ $isCurrent := false }}
-              {{ $targetPath := $currentPath }}
-
-              {{/* Calculate target path for version (for JS fallback, not navigation) */}}
-              {{ if not $isDefault }}
-                {{ $targetPath = replace $currentPath "/docs/" (printf "/%s/docs/" .) }}
-                {{ if hasPrefix $currentPath (printf "/%s/docs/" .) }}
-                  {{ $isCurrent = true }}
-                {{ end }}
-              {{ else }}
-                {{ $targetPath = replace $currentPath (printf "/%s/docs/" $currentVer) "/docs/" }}
-                {{ if hasPrefix $currentPath "/docs/" }}
-                  {{ $isCurrent = true }}
-                {{ end }}
-              {{ end }}
-
+              {{ $isDefault := eq . $versionsData.defaultVersion }}
+              {{ $isCurrent := eq . $currentVer }}
               <li>
-                <a class="dropdown-item version-switch-link{{ if $isCurrent }} current disabled{{ end }}"
-                  data-version="{{ . }}"
-                  {{ if $isCurrent }}aria-current="true" tabindex="-1" href="#"{{ else }}href="#"{{ end }}>
+                <a class="dropdown-item{{ if $isCurrent }} current{{ end }}"
+                  {{ if $isCurrent }}aria-current="true"{{ end }}
+                  href="{{ if $isDefault }}/{{ else }}/{{ . }}/{{ end }}">
                   {{ . }}{{ if $isDefault }} <span class="version-flag">(default)</span>{{ end }}
                 </a>
               </li>
