@@ -1,13 +1,28 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# -----------------------------------------------------------------------------
 # Multi-Version Build Script for OCM Website
-# Usage: ./github/scripts/build-multi-version.sh
-# Requirements: git, hugo, npm, jq, cmp
+# -----------------------------------------------------------------------------
+# Builds all website versions in parallel using git worktrees.
+# For performance, it reuses the central node_modules folder via symlink if the
+# package-lock.json is identical. If dependencies differ, node_modules is installed
+# separately in the worktree.
 #
-# This script builds all website versions in parallel using git worktrees.
-# For performance, it reuses the central node_modules folder via symlink if the package-lock.json is identical.
-# If dependencies differ, node_modules is installed separately in the worktree.
+# USAGE:
+#   bash .github/scripts/build-multi-version.sh [baseURL]
+#
+#   baseURL: Optional. The base URL for the built site versions. Default is
+#            "https://ocm.software". For local testing, you can use e.g.
+#            "http://localhost:1313".
+#
+# EXAMPLES:
+#   bash .github/scripts/build-multi-version.sh
+#   bash .github/scripts/build-multi-version.sh http://localhost:1313
+# -----------------------------------------------------------------------------
+
+# Read baseURL from first argument, default to https://ocm.software
+BASE_URL="${1:-https://ocm.software}"
 
 # Helper for error output
 err() { echo "[ERROR] $*" >&2; }
@@ -60,7 +75,7 @@ for VERSION in $VERSIONS; do
       hugo mod get -u || { err "hugo mod get -u failed for main"; exit 1; }
       hugo mod tidy || { err "hugo mod tidy failed for main"; exit 1; }
       npm ci || { err "npm ci failed for main"; exit 1; }
-      npm run build -- --destination "$OUTDIR" --baseURL "https://ocm.software/dev" || { err "npm run build failed for main"; exit 1; }
+      npm run build -- --destination "$OUTDIR" --baseURL "$BASE_URL/dev" || { err "npm run build failed for main"; exit 1; }
       BUILT_VERSIONS["$VERSION"]="$OUTDIR"
       continue
     fi
@@ -93,7 +108,7 @@ for VERSION in $VERSIONS; do
   fi
 
   # Build the site for this version
-  npm run build -- --destination "../../$OUTDIR" --baseURL "https://ocm.software/$VERSION" || { err "npm run build failed for $BRANCH"; popd >/dev/null; exit 1; }
+  npm run build -- --destination "../../$OUTDIR" --baseURL "$BASE_URL/$VERSION" || { err "npm run build failed for $BRANCH"; popd >/dev/null; exit 1; }
   BUILT_VERSIONS["$VERSION"]="$OUTDIR"
 
   popd >/dev/null
