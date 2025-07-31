@@ -72,8 +72,8 @@ for VERSION in $VERSIONS; do
     # If main is already checked out, build directly in main working directory
     if [ "$CURRENT_BRANCH" = "main" ]; then
       info "Building dev version directly from main working directory"
-      hugo mod get -u || { err "hugo mod get -u failed for main"; exit 1; }
-      hugo mod tidy || { err "hugo mod tidy failed for main"; exit 1; }
+      npm run hugo --  mod get -u || { err "hugo mod get -u failed for main"; exit 1; }
+      npm run hugo --  mod tidy || { err "hugo mod tidy failed for main"; exit 1; }
       npm ci || { err "npm ci failed for main"; exit 1; }
       npm run build -- --destination "$OUTDIR" --baseURL "$BASE_URL/dev" || { err "npm run build failed for main"; exit 1; }
       BUILT_VERSIONS["$VERSION"]="$OUTDIR"
@@ -101,8 +101,8 @@ for VERSION in $VERSIONS; do
   fi
 
   # Update Hugo modules for the branch
-  hugo mod get -u || { err "hugo mod get -u failed for $BRANCH"; popd >/dev/null; exit 1; }
-  hugo mod tidy || { err "hugo mod tidy failed for $BRANCH"; popd >/dev/null; exit 1; }
+  npm run hugo --  mod get -u || { err "hugo mod get -u failed for $BRANCH"; popd >/dev/null; exit 1; }
+  npm run hugo --  mod tidy || { err "hugo mod tidy failed for $BRANCH"; popd >/dev/null; exit 1; }
 
   # Optimization: reuse central node_modules if package-lock.json is identical
   # This saves time and disk space for identical dependencies across versions
