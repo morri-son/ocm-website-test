@@ -115,7 +115,11 @@ for VERSION in $VERSIONS; do
   fi
 
   # Build the site for this version
-  npm run build -- --destination "../../$OUTDIR" --baseURL "$BASE_URL/$VERSION" || { err "npm run build failed for $BRANCH"; popd >/dev/null; exit 1; }
+  if [ "$VERSION" = "$DEFAULT_VERSION" ]; then
+    npm run build -- --destination "../../$OUTDIR" --baseURL "$BASE_URL" || { err "npm run build failed for $BRANCH"; popd >/dev/null; exit 1; }
+  else
+    npm run build -- --destination "../../$OUTDIR" --baseURL "$BASE_URL/$VERSION" || { err "npm run build failed for $BRANCH"; popd >/dev/null; exit 1; }
+  fi
   BUILT_VERSIONS["$VERSION"]="$OUTDIR"
 
   popd >/dev/null
