@@ -60,6 +60,8 @@ WORKTREE_BASE=".worktrees"
 rm -rf "$WORKTREE_BASE"
 mkdir -p "$WORKTREE_BASE"
 
+git worktree prune  # Clean up any stale worktrees
+
 # Build each version
 # BUILT_VERSIONS will hold the mapping: version -> output directory
 declare -A BUILT_VERSIONS
@@ -93,16 +95,11 @@ for VERSION in $VERSIONS; do
   git worktree add "$WORKTREE_BASE/$VERSION" "$BRANCH" || { err "Failed to add worktree for $BRANCH"; exit 1; }
   pushd "$WORKTREE_BASE/$VERSION" >/dev/null
 
-
   # Copy the latest data/versions.json from main into the worktree (for version switcher)
   if [ "$VERSION" != "dev" ]; then
     cp ../../data/versions.json data/versions.json
     info "Copied latest data/versions.json into worktree for $VERSION."
   fi
-
-  # Update Hugo modules for the branch
-  npm run hugo --  mod get -u || { err "hugo mod get -u failed for $BRANCH"; popd >/dev/null; exit 1; }
-  npm run hugo --  mod tidy || { err "hugo mod tidy failed for $BRANCH"; popd >/dev/null; exit 1; }
 
   # Optimization: reuse central node_modules if package-lock.json is identical
   # This saves time and disk space for identical dependencies across versions
@@ -113,6 +110,10 @@ for VERSION in $VERSIONS; do
     info "package-lock.json differs from central version. Installing separate dependencies for this version."
     npm ci || { err "npm ci failed for $BRANCH"; popd >/dev/null; exit 1; }
   fi
+
+  # Update Hugo modules for the branch
+  npm run hugo --  mod get -u || { err "hugo mod get -u failed for $BRANCH"; popd >/dev/null; exit 1; }
+  npm run hugo --  mod tidy || { err "hugo mod tidy failed for $BRANCH"; popd >/dev/null; exit 1; }
 
   # Build the site for this version
   if [ "$VERSION" = "$DEFAULT_VERSION" ]; then
