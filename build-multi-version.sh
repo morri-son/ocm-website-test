@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -euox pipefail
 
 # -----------------------------------------------------------------------------
 # Multi-Version Build Script for OCM Website
@@ -67,35 +67,33 @@ git worktree prune  # Clean up any stale worktrees
 declare -A BUILT_VERSIONS
 for VERSION in $VERSIONS; do
 
-  # Determine branch and output directory for each version (PR-aware)
+  # Always set current branch for info/debug output
   CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-  # Map version to branch: dev->main, 1.0->website/1.0, ...
+
+  # Determine output directory for each version
   if [ "$VERSION" = "dev" ]; then
-    UPSTREAM_BRANCH="main"
     OUTDIR="$PUBLIC_DIR/dev"
-  else
+    UPSTREAM_BRANCH="main"
+  elif [ "$VERSION" = "$DEFAULT_VERSION" ]; then
+    OUTDIR="$PUBLIC_DIR"
     UPSTREAM_BRANCH="website/$VERSION"
-    if [ "$VERSION" = "$DEFAULT_VERSION" ]; then
-      OUTDIR="$PUBLIC_DIR"
-    else
-      OUTDIR="$PUBLIC_DIR/$VERSION"
-    fi
+  else
+    OUTDIR="$PUBLIC_DIR/$VERSION"
+    UPSTREAM_BRANCH="website/$VERSION"
   fi
 
-  # Use PR branch for the version that matches the target branch, else upstream branch
-  if [ "$CURRENT_BRANCH" = "$UPSTREAM_BRANCH" ]; then
-    # Special case: if PR branch is already checked out (local build on branch)
-    BRANCH="$CURRENT_BRANCH"
-    if [ "$VERSION" = "dev" ] && [ "$CURRENT_BRANCH" = "main" ]; then
-      # dev build from main working directory
-      info "Building dev version directly from main working directory"
-      npm run hugo --  mod get -u || { err "hugo mod get -u failed for main"; exit 1; }
-      npm run hugo --  mod tidy || { err "hugo mod tidy failed for main"; exit 1; }
-      npm ci || { err "npm ci failed for main"; exit 1; }
-      npm run build -- --destination "$OUTDIR" --baseURL "$BASE_URL/dev" || { err "npm run build failed for main"; exit 1; }
-      BUILT_VERSIONS["$VERSION"]="$OUTDIR"
-      continue
-    fi
+  # Read docsVersion from current branch (only exact key)
+  CURRENT_DOCSVERSION=$(grep -E '^[[:space:]]*docsVersion[[:space:]]*=' config/_default/params.toml | cut -d'=' -f2 | tr -d ' "')
+
+  if [ "$VERSION" = "$CURRENT_DOCSVERSION" ]; then
+    # Build this version from current branch (no worktree)
+    info "Building $VERSION version directly from current branch ($CURRENT_BRANCH) into $OUTDIR"
+    hugo mod get -u || { err "hugo mod get -u failed for $CURRENT_BRANCH"; exit 1; }
+    hugo mod tidy || { err "hugo mod tidy failed for $CURRENT_BRANCH"; exit 1; }
+    npm ci || { err "npm ci failed for $CURRENT_BRANCH"; exit 1; }
+    npm run build -- --destination "$OUTDIR" --baseURL "$BASE_URL/$VERSION" || { err "npm run build failed for $CURRENT_BRANCH"; exit 1; }
+    BUILT_VERSIONS["$VERSION"]="$OUTDIR"
+    continue
   else
     BRANCH="$UPSTREAM_BRANCH"
   fi
