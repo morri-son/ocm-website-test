@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euox pipefail
+set -euo pipefail
 
 # -----------------------------------------------------------------------------
 # Multi-Version Build Script for OCM Website
@@ -142,3 +142,6 @@ echo "--- Build Summary ---"
 for VERSION in "${!BUILT_VERSIONS[@]}"; do
   printf "Version: %-10s → %s\n" "$VERSION" "${BUILT_VERSIONS[$VERSION]}"
 done
+
+# Cleanup worktrees directory
+rm -rf "$WORKTREE_BASE"
