@@ -37,8 +37,6 @@ for cmd in git npm jq cmp; do
   fi
 done
 
-
-
 # --- Determine the correct source for data/versions.json ---
 # By default, use the local file in the current branch
 VERSIONS_JSON_PATH="data/versions.json"
@@ -48,15 +46,21 @@ DOCS_VERSION=$(grep -E '^[[:space:]]*docsVersion[[:space:]]*=' config/_default/p
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
 # --- Check for version mismatch between branch and docsVersion ---
-# If the current branch is a website version branch (e.g., website/v2.0),
-# but docsVersion does not match the expected version, exit with an error.
-if [[ "$CURRENT_BRANCH" =~ ^website/v[0-9]+\.[0-9]+$ ]]; then
+# Determine expected docsVersion based on current branch
+if [ "$CURRENT_BRANCH" = "main" ]; then
+  EXPECTED_DOCSVERSION="dev"
+elif [[ "$CURRENT_BRANCH" =~ ^website/v[0-9]+\.[0-9]+$ ]]; then
   EXPECTED_DOCSVERSION="${CURRENT_BRANCH#website/}"
-  if [ "$DOCS_VERSION" != "$EXPECTED_DOCSVERSION" ]; then
-    err "docsVersion ('$DOCS_VERSION') does not match the expected value ('$EXPECTED_DOCSVERSION') for branch '$CURRENT_BRANCH'."
-    err "Please update docsVersion in config/_default/params.toml to match the branch version."
-    exit 1
-  fi
+else
+  # For other branches (e.g., feature branches), skip validation
+  EXPECTED_DOCSVERSION=""
+fi
+
+# Validate docsVersion matches expected value (if we have an expectation)
+if [ -n "$EXPECTED_DOCSVERSION" ] && [ "$DOCS_VERSION" != "$EXPECTED_DOCSVERSION" ]; then
+  err "docsVersion ('$DOCS_VERSION') does not match expected value ('$EXPECTED_DOCSVERSION') for branch '$CURRENT_BRANCH'"
+  err "Please update docsVersion in config/_default/params.toml to '$EXPECTED_DOCSVERSION'"
+  exit 1
 fi
 
 # Determine the upstream branch for version resolution
@@ -66,8 +70,6 @@ if [ "$DOCS_VERSION" = "dev" ]; then
 else
   UPSTREAM_BRANCH="website/$DOCS_VERSION"
 fi
-
-
 
 # Decide which data/versions.json to use:
 # - If on main, or a PR branch for main (upstream is origin/main), use the local file
@@ -85,7 +87,6 @@ else
   info "Using data/versions.json from main (temporary) for version resolution."
 fi
 
-
 # Read all available versions from the determined data/versions.json file
 VERSIONS=$(jq -r '.versions[]' "$VERSIONS_JSON_PATH")
 if [ -z "$VERSIONS" ]; then
@@ -93,11 +94,17 @@ if [ -z "$VERSIONS" ]; then
   exit 1
 fi
 
-
 # Read the default version from config/_default/params.toml
 DEFAULT_VERSION=$(grep -E '^[[:space:]]*defaultVersion' config/_default/params.toml | cut -d'=' -f2 | tr -d ' "')
 if [ -z "$DEFAULT_VERSION" ]; then
   err "defaultVersion not found in config/_default/params.toml."
+  exit 1
+fi
+
+# Check if the default version exists in the versions.json
+if ! echo "$VERSIONS" | grep -q "^$DEFAULT_VERSION$"; then
+  err "defaultVersion '$DEFAULT_VERSION' not found in versions.json"
+  err "Available versions: $(echo "$VERSIONS" | tr '\n' ' ')"
   exit 1
 fi
 
@@ -150,6 +157,13 @@ for VERSION in $VERSIONS; do
   fi
 
   # Otherwise, build from the corresponding branch using a git worktree
+  # Check if the branch exists before trying to add a worktree:
+  if ! git rev-parse --verify "$BRANCH" >/dev/null 2>&1; then
+    err "Branch '$BRANCH' for version '$VERSION' does not exist"
+    err "Please create the branch or remove '$VERSION' from versions.json"
+    exit 1
+  fi
+
   info "Building version $VERSION from branch $BRANCH into $OUTDIR"
   git worktree add "$WORKTREE_BASE/$VERSION" "$BRANCH" || { err "Failed to add worktree for $BRANCH"; exit 1; }
   pushd "$WORKTREE_BASE/$VERSION" >/dev/null
