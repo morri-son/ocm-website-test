@@ -1,9 +1,10 @@
 {{ $currentVer := site.Params.doks.docsVersion }}
 {{ $defaultVer := site.Data.versions.defaultVersion }}
-<!-- DEBUG: currentVer={{ $currentVer }} defaultVer={{ $defaultVer }} -->
 {{ if and $currentVer $defaultVer (ne $currentVer $defaultVer) (ne $currentVer "dev") }}
-  <div class="version-warning-banner">
-    You are currently viewing documentation for OCM version <strong>{{ $currentVer }}</strong>.<br>
-    Version <strong>{{ $currentVer }}</strong> is no longer actively maintained. For up-to-date information, see the latest released version <a href="{{ "/" | relLangURL }}" class="version-warning-link">{{ $defaultVer }}</a>.
-  </div>
+  <aside class="version-warning-banner" role="status" aria-live="polite" style="margin:0;">
+    <span>
+      You are currently viewing documentation for OCM version <strong>{{ $currentVer }}</strong>.<br>
+      Version <strong>{{ $currentVer }}</strong> is no longer actively maintained. For up-to-date information, see the latest released version <a href="{{ "/" | relLangURL }}" class="version-warning-link">{{ $defaultVer }}</a>.
+    </span>
+  </aside>
 {{ end }}
