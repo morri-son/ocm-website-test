@@ -12,14 +12,7 @@
 
 <header class="navbar navbar-expand-lg">
   {{ with site.Params.doks.containerBreakpoint -}}
-    <div class="container-{{ . }}">
-  {{ else -}}
-    <div class="container">
-  {{ end -}}
-
-    <!-- Site title -->
-    <!-- Replaced logo PNG with inline SVGs for icon and text -->
-    <a class="navbar-brand order-0 ocm-logo d-flex align-items-center" href="{{ "/" | relLangURL }}" aria-label="{{ .Site.Params.Title }}">
+  {{ end }}
       <span class="ocm-logo-icon d-flex align-items-center" style="height: 64px;">
         {{ partial "inline-svg.html" (dict "src" "ocm-logo-icon-colour") }}
       </span><span class="ocm-logo-text d-flex align-items-center" style="height: 64px; margin-left: -0.2rem;">
@@ -210,7 +203,8 @@
 
         <!-- Version switches always navigate to the Root page of the selected version -->
         <!-- Otherwise complex logic for non existing docs in different versions, error handling and -->
-        <!-- fallbacks would require complex logic, most likely only possible in JavaScript. -->
+        <!-- fall
+Error: "/Users/D032990/github/github.com/morri-son/ocm-website-test/layouts/partials/header/header.html:297:1": parse failed: template: partials/header/header.html:297: unexpected EOFbacks would require complex logic, most likely only possible in JavaScript. -->
         {{ if site.Params.doks.docsVersioning }}
         {{ $versionsData := site.Data.versions }}
         {{ if $versionsData.versions }}
@@ -293,6 +287,7 @@
 
   </div>
 </header>
+{{ partial "header/version-warning.html" . }}
 {{ if site.Params.doks.navbarSticky -}}
 </div>
 {{ end -}}
