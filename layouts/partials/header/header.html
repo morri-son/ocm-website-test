@@ -208,7 +208,9 @@
         </div>
         {{ end -}}
 
-        <!-- Vereinfachter Versioning dropdown -->
+        <!-- Version switches always navigate to the Root page of the selected version -->
+        <!-- Otherwise complex logic for non existing docs in different versions, error handling and -->
+        <!-- fallbacks would require complex logic, most likely only possible in JavaScript. -->
         {{ if site.Params.doks.docsVersioning }}
         {{ $versionsData := site.Data.versions }}
         {{ if $versionsData.versions }}
