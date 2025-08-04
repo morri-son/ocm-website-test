@@ -19,10 +19,10 @@
 
     <!-- Site title -->
     <!-- Replaced logo PNG with inline SVGs for icon and text -->
+    {{ $versionsData := site.Data.versions }}
     {{ $currentVer := site.Params.doks.docsVersion }}
-    {{ $defaultVer := site.Data.versions.defaultVersion }}
-    {{ $logoRoot := cond (eq $currentVer $defaultVer) "/" (print "/" $currentVer "/") }}
-    <a class="navbar-brand order-0 ocm-logo d-flex align-items-center" href="{{ $logoRoot | relLangURL }}" aria-label="{{ .Site.Params.Title }}">
+    {{ $isDefault := eq $currentVer $versionsData.defaultVersion }}
+    <a class="navbar-brand order-0 ocm-logo d-flex align-items-center" href="{{ if $isDefault }}/{{ else }}/{{ $currentVer }}/{{ end }}" aria-label="{{ .Site.Params.Title }}">
       <span class="ocm-logo-icon d-flex align-items-center" style="height: 64px;">
         {{ partial "inline-svg.html" (dict "src" "ocm-logo-icon-colour") }}
       </span><span class="ocm-logo-text d-flex align-items-center" style="height: 64px; margin-left: -0.2rem;">
