@@ -1,14 +1,3 @@
-# --- Check for version mismatch between branch and docsVersion ---
-# If the current branch is a website version branch (e.g., website/v2.0),
-# but docsVersion does not match the expected version, exit with an error.
-if [[ "$CURRENT_BRANCH" =~ ^website/v[0-9]+\.[0-9]+$ ]]; then
-  EXPECTED_DOCSVERSION="${CURRENT_BRANCH#website/}"
-  if [ "$DOCS_VERSION" != "$EXPECTED_DOCSVERSION" ]; then
-    err "docsVersion ('$DOCS_VERSION') does not match the expected value ('$EXPECTED_DOCSVERSION') for branch '$CURRENT_BRANCH'."
-    err "Please update docsVersion in config/_default/params.toml to match the branch version."
-    exit 1
-  fi
-fi
 #!/usr/bin/env bash
 set -euo pipefail
 
@@ -18,7 +7,7 @@ set -euo pipefail
 # Builds all website versions in parallel using git worktrees.
 # For performance, it reuses the central node_modules folder via symlink if the
 # package-lock.json is identical. If dependencies differ, node_modules is installed
-# separately in the worktree.
+# separately in the worktree using npm ci.
 #
 # USAGE:
 #   bash .github/scripts/build-multi-version.sh [baseURL]
@@ -57,6 +46,18 @@ VERSIONS_JSON_PATH="data/versions.json"
 # Get docsVersion and current branch only once for later use
 DOCS_VERSION=$(grep -E '^[[:space:]]*docsVersion[[:space:]]*=' config/_default/params.toml | cut -d'=' -f2 | tr -d ' "')
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+# --- Check for version mismatch between branch and docsVersion ---
+# If the current branch is a website version branch (e.g., website/v2.0),
+# but docsVersion does not match the expected version, exit with an error.
+if [[ "$CURRENT_BRANCH" =~ ^website/v[0-9]+\.[0-9]+$ ]]; then
+  EXPECTED_DOCSVERSION="${CURRENT_BRANCH#website/}"
+  if [ "$DOCS_VERSION" != "$EXPECTED_DOCSVERSION" ]; then
+    err "docsVersion ('$DOCS_VERSION') does not match the expected value ('$EXPECTED_DOCSVERSION') for branch '$CURRENT_BRANCH'."
+    err "Please update docsVersion in config/_default/params.toml to match the branch version."
+    exit 1
+  fi
+fi
 
 # Determine the upstream branch for version resolution
 # If docsVersion is "dev", upstream is "main"; otherwise, it's "website/<docsVersion>"
