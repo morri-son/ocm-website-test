@@ -122,16 +122,19 @@ git worktree prune
 # BUILT_VERSIONS will hold the mapping: version -> output directory
 declare -A BUILT_VERSIONS
 for VERSION in $VERSIONS; do
-  # Determine output directory and branch for each version
+  # Determine output directory, branch and final base URL for each version
   if [ "$VERSION" = "dev" ]; then
     OUTDIR="$PUBLIC_DIR/dev"
     BRANCH="main"
+    FINAL_BASE_URL="$BASE_URL/dev"
   elif [ "$VERSION" = "$DEFAULT_VERSION" ]; then
     OUTDIR="$PUBLIC_DIR"
     BRANCH="website/$VERSION"
+    FINAL_BASE_URL="$BASE_URL"              # no /version suffix for default!
   else
     OUTDIR="$PUBLIC_DIR/$VERSION"
     BRANCH="website/$VERSION"
+    FINAL_BASE_URL="$BASE_URL/$VERSION"
   fi
 
   # If the current branch matches docsVersion, build directly from the current branch (no worktree needed)
@@ -141,7 +144,7 @@ for VERSION in $VERSIONS; do
     npm run hugo -- mod get -u || { err "hugo mod get -u failed for $CURRENT_BRANCH"; exit 1; }
     npm run hugo -- mod tidy || { err "hugo mod tidy failed for $CURRENT_BRANCH"; exit 1; }
     npm ci || { err "npm ci failed for $CURRENT_BRANCH"; exit 1; }
-    npm run build -- --destination "$OUTDIR" --baseURL "$BASE_URL/$VERSION" || { err "npm run build failed for $CURRENT_BRANCH"; exit 1; }
+    npm run build -- --destination "$OUTDIR" --baseURL "$FINAL_BASE_URL" || { err "npm run build failed for $CURRENT_BRANCH"; exit 1; }
     BUILT_VERSIONS["$VERSION"]="$OUTDIR"
     continue
   fi
@@ -172,18 +175,13 @@ for VERSION in $VERSIONS; do
   npm run hugo -- mod tidy || { err "hugo mod tidy failed for $BRANCH"; popd >/dev/null; exit 1; }
 
   # Build the site for this version
-  if [ "$VERSION" = "$DEFAULT_VERSION" ]; then
-    npm run build -- --destination "../../$OUTDIR" --baseURL "$BASE_URL" || { err "npm run build failed for $BRANCH"; popd >/dev/null; exit 1; }
-  else
-    npm run build -- --destination "../../$OUTDIR" --baseURL "$BASE_URL/$VERSION" || { err "npm run build failed for $BRANCH"; popd >/dev/null; exit 1; }
-  fi
+  npm run build -- --destination "../../$OUTDIR" --baseURL "$FINAL_BASE_URL" || { err "npm run build failed for $BRANCH"; popd >/dev/null; exit 1; }
   BUILT_VERSIONS["$VERSION"]="$OUTDIR"
 
   # Clean up and remove the worktree after building
   popd >/dev/null
   git worktree remove "$WORKTREE_BASE/$VERSION" --force
 done
-
 
 # Print a summary of all built versions and their output directories
 info "Multi-version build completed. Output in $PUBLIC_DIR."
