@@ -21,11 +21,7 @@
     <!-- Replaced logo PNG with inline SVGs for icon and text -->
     {{ $currentVer := site.Params.doks.docsVersion }}
     {{ $defaultVer := site.Data.versions.defaultVersion }}
-    {{ if eq $currentVer $defaultVer }}
-      {{ $logoRoot := "/" }}
-    {{ else }}
-      {{ $logoRoot := (print "/" $currentVer "/") }}
-    {{ end }}
+    {{ $logoRoot := cond (eq $currentVer $defaultVer) "/" (print "/" $currentVer "/") }}
     <a class="navbar-brand order-0 ocm-logo d-flex align-items-center" href="{{ $logoRoot | relLangURL }}" aria-label="{{ .Site.Params.Title }}">
       <span class="ocm-logo-icon d-flex align-items-center" style="height: 64px;">
         {{ partial "inline-svg.html" (dict "src" "ocm-logo-icon-colour") }}
