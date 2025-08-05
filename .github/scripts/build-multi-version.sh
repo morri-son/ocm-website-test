@@ -137,7 +137,7 @@ for VERSION in $VERSIONS; do
   elif [ "$VERSION" = "$DEFAULT_VERSION" ]; then
     OUTDIR="$PUBLIC_DIR"
     BRANCH="website/$VERSION"
-    FINAL_BASE_URL="$BASE_URL"              # no /version suffix for default!
+    FINAL_BASE_URL="$BASE_URL" # no /version suffix for default version!
   else
     OUTDIR="$PUBLIC_DIR/$VERSION"
     BRANCH="website/$VERSION"
@@ -147,10 +147,12 @@ for VERSION in $VERSIONS; do
   # If the current branch matches docsVersion, build directly from the current branch (no worktree needed)
   if [ "$VERSION" = "$DOCS_VERSION" ]; then
     info "Building $VERSION version directly from current branch ($CURRENT_BRANCH) into $OUTDIR"
+    # Make npm clean install (using the dependency lock file)
+    npm ci || { err "npm ci failed for $CURRENT_BRANCH"; exit 1; }
     # Always update Hugo modules and install dependencies before building
     npm run hugo -- mod get -u || { err "hugo mod get -u failed for $CURRENT_BRANCH"; exit 1; }
     npm run hugo -- mod tidy || { err "hugo mod tidy failed for $CURRENT_BRANCH"; exit 1; }
-    npm ci || { err "npm ci failed for $CURRENT_BRANCH"; exit 1; }
+    # Execute Hugo build with the final base URL
     npm run build -- --destination "$OUTDIR" --baseURL "$FINAL_BASE_URL" || { err "npm run build failed for $CURRENT_BRANCH"; exit 1; }
     BUILT_VERSIONS["$VERSION"]="$OUTDIR"
     continue
@@ -168,9 +170,9 @@ for VERSION in $VERSIONS; do
   git worktree add "$WORKTREE_BASE/$VERSION" "$BRANCH" || { err "Failed to add worktree for $BRANCH"; exit 1; }
   pushd "$WORKTREE_BASE/$VERSION" >/dev/null
 
-  # Copy the latest data/versions.json into the worktree for the version switcher (except for dev)
-  if [ "$VERSION" != "dev" ]; then
-    cp ../../$VERSIONS_JSON_PATH data/versions.json
+  # Copy the latest data/versions.json into the worktree for the version switcher (except for current branch)
+  if [ "$VERSION" != "$DOCS_VERSION" ]; then
+    cp "../../$VERSIONS_JSON_PATH" data/versions.json
     info "Copied latest data/versions.json into worktree for $VERSION."
   fi
 
@@ -180,6 +182,7 @@ for VERSION in $VERSIONS; do
     info "package-lock.json is identical, creating symlink to central node_modules."
     ln -s ../../node_modules ./node_modules
   else
+    # Make npm clean install (using the dependency lock file)
     info "package-lock.json differs from central version. Installing separate dependencies for this version."
     npm ci || { err "npm ci failed for $BRANCH"; popd >/dev/null; exit 1; }
   fi
@@ -188,7 +191,7 @@ for VERSION in $VERSIONS; do
   npm run hugo -- mod get -u || { err "hugo mod get -u failed for $BRANCH"; popd >/dev/null; exit 1; }
   npm run hugo -- mod tidy || { err "hugo mod tidy failed for $BRANCH"; popd >/dev/null; exit 1; }
 
-  # Build the site for this version
+  # Build the site for this version using the final base URL
   npm run build -- --destination "../../$OUTDIR" --baseURL "$FINAL_BASE_URL" || { err "npm run build failed for $BRANCH"; popd >/dev/null; exit 1; }
   BUILT_VERSIONS["$VERSION"]="$OUTDIR"
 
